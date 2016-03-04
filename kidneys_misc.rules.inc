@@ -26,6 +26,28 @@ function kidneys_misc_rules_action_info() {
     'description' => t('The email address to fetch by.'),
   );
 
+  $actions['kidneys_misc_dontion_gl_code'] = array(
+    'label' => t('Get GL Code for Donation'),
+    'group' => t('NKF'),
+    'parameter' => array(
+      'office_id' => array(
+        'type' => 'text',
+        'label' => t('GL Office Dept Segment'),
+      ),
+      'gift_type' => array(
+        'type' => 'text',
+        'label' => t('Gift Type'),
+      ),
+    ),
+    'provides' => array(
+      'gl_code' => array(
+        'type' => 'text',
+        'label' => t('GL Code'),
+        'save' => TRUE
+      ),
+    ),
+  );
+
   return $actions;
 }
 
@@ -62,6 +84,34 @@ function kidneys_misc_rules_action_fetch_by_mail($mail) {
   }
 }
 
+/**
+ * Rules action: get GL code for donation.
+ */
+
+function kidneys_misc_dontion_gl_code($office_id, $gift_type) {
+  $one = '10';
+  $two = $office_id;
+  $three = '8000';
+  // Affiliates.
+  if ($office_id >= 700) {
+    // Memorial/Honor.
+    if (isset($gift_type) && $gift_type != '') {
+      $four = '210';
+    } else {
+      $four = '209';
+    }
+  } else {
+    // Memorial/Honor.
+    if (isset($gift_type) && $gift_type != '') {
+      $four = '401';
+    } else {
+      $four = '400';
+    }
+  }
+  return array(
+    'gl_code' => $one . '-' . $two .'-' . $three . '-' . $four
+  );
+}
 /**
  * Rules condition: contact exists by email address.
  */
