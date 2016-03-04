@@ -17,7 +17,7 @@ function kidneys_misc_rules_action_info() {
     'label' => t('Fetch contact by email'),
     'base' => 'kidneys_misc_rules_action_fetch_by_mail',
     'provides' => array(
-      'fetched_contact' => array('type' => 'kidneys_misc', 'label' => t('Fetched contact')),
+      'fetched_contact' => array('type' => 'redhen_contact', 'label' => t('Fetched contact')),
     ),
   );
   $actions['kidneys_misc_fetch_by_mail']['parameter']['mail'] = array(
