@@ -91,9 +91,9 @@ function kidneys_misc_rules_action_fetch_by_mail($mail) {
 function kidneys_misc_dontion_gl_code($office_id, $gift_type) {
   $one = '10';
   $two = $office_id;
-  $three = '8000';
   // Affiliates.
   if ($office_id >= 700) {
+    $three = '0000';
     // Memorial/Honor.
     if (isset($gift_type) && $gift_type != '') {
       $four = '210';
@@ -101,6 +101,7 @@ function kidneys_misc_dontion_gl_code($office_id, $gift_type) {
       $four = '209';
     }
   } else {
+    $three = '8000';
     // Memorial/Honor.
     if (isset($gift_type) && $gift_type != '') {
       $four = '401';
