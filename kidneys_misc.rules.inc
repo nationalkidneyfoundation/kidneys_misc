@@ -37,6 +37,7 @@ function kidneys_misc_rules_action_info() {
       'gift_type' => array(
         'type' => 'text',
         'label' => t('Gift Type'),
+        'optional' => TRUE
       ),
     ),
     'provides' => array(
@@ -91,32 +92,24 @@ function kidneys_misc_rules_action_fetch_by_mail($mail) {
 function kidneys_misc_dontion_gl_code($office_id, $gift_type) {
   $one = '10';
   $two = $office_id;
-  watchdog('gl_testing_type', $gift_type);
   // Affiliates.
   if ($office_id >= 700) {
-    watchdog('gl_testing', 'aff');
     $three = '0000';
     // Memorial/Honor.
     if (isset($gift_type) && $gift_type != '') {
       $four = '210';
-      watchdog('gl_testing', 'affhonor');
     } else {
       $four = '209';
-      watchdog('gl_testing', 'affgen');
     }
   } else {
     $three = '8000';
     // Memorial/Honor.
-    watchdog('gl_testing', 'div');
     if (isset($gift_type) && $gift_type != '') {
       $four = '401';
-      watchdog('gl_testing', 'divhonor');
     } else {
       $four = '400';
-      watchdog('gl_testing', 'divgen');
     }
   }
-  
   return array(
     'gl_code' => $one . '-' . $two .'-' . $three . '-' . $four
   );
