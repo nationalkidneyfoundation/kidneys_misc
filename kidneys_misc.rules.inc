@@ -89,7 +89,7 @@ function kidneys_misc_rules_action_fetch_by_mail($mail) {
  * Rules action: get GL code for donation.
  */
 
-function kidneys_misc_dontion_gl_code($office_id, $gift_type) {
+function kidneys_misc_dontion_gl_code($office_id, $gift_type = NULL) {
   $one = '10';
   $two = $office_id;
   // Affiliates.
