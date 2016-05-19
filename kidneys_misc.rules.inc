@@ -93,7 +93,7 @@ function kidneys_misc_dontion_gl_code($office_id, $gift_type = NULL) {
   $one = '10';
   $two = $office_id;
   // Affiliates.
-  if ($office_id >= 700) {
+  if ($office_id >= 700 && $office_id < 800) {
     $three = '0000';
     // Memorial/Honor.
     if (isset($gift_type) && $gift_type != '') {
