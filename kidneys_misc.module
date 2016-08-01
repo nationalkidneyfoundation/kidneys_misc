@@ -17,7 +17,7 @@ function kidneys_misc_reassign_contact_donation_membership(RedhenContact $master
   $transaction = db_transaction();
   try {
     // Iterate through all contacts and update or delete related entities.
-    $contact_id = $contact->internalIdentifier();
+    $dupe_id = $dupe->internalIdentifier();
 
     $types = array('redhen_membership', 'redhen_donation');
 
@@ -30,7 +30,7 @@ function kidneys_misc_reassign_contact_donation_membership(RedhenContact $master
       if ($entity_type == 'redhen_membership') {
         $query->propertyCondition('entity_type', 'redhen_contact');
       }
-      $query->propertyCondition($entity_key, $contact_id);
+      $query->propertyCondition($entity_key, $dupe_id);
       $result = $query->execute();
       if (!empty($result)) {
         $rel_entities = entity_load($entity_type, array_keys($result[$entity_type]));
@@ -44,7 +44,7 @@ function kidneys_misc_reassign_contact_donation_membership(RedhenContact $master
 
     // Delete old contacts.
     if($delete_dupe){
-      redhen_contact_delete_multiple(array($contact_id => $contact_id));
+      redhen_contact_delete_multiple(array($dupe_id => $dupe_id));
     }
 
     $master_wrapper->save();
