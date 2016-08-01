@@ -49,6 +49,26 @@ function kidneys_misc_rules_action_info() {
     ),
   );
 
+  $actions['kidneys_misc_reassign_contact_donation_membership'] = array(
+    'label' => t('Reassign contact on donations and memberships'),
+    'group' => t('NKF'),
+    'parameter' => array(
+      'master' => array(
+        'type' => 'redhen_contact',
+        'label' => t('Master Contact'),
+      ),
+      'dupe' => array(
+        'type' => 'redhen_contact',
+        'label' => t('Dupe Contact'),
+      ),
+      'delete_dupe' => array(
+        'type' => 'boolean',
+        'label' => t('Delete Dupe'),
+        'default value' => true
+      ),
+    ),
+  );
+
   return $actions;
 }
 

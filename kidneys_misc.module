@@ -1,0 +1,59 @@
+<?php
+
+/**
+ * Merge values from contacts into master contact and handle related entities.
+ *
+ * @param RedhenContact $master
+ *   The master RedHen Contact.
+ * @param RedhenContact dupe
+ *   The contact being merged into the master.
+ * @return bool
+ *   Result of the merge attempt.
+ */
+function kidneys_misc_reassign_contact_donation_membership(RedhenContact $master, RedhenContact $dupe, $delete_dupe = true) {
+  $master_wrapper = entity_metadata_wrapper('redhen_contact', $master);
+  $master_id = $master_wrapper->getIdentifier();
+
+  $transaction = db_transaction();
+  try {
+    // Iterate through all contacts and update or delete related entities.
+    $contact_id = $contact->internalIdentifier();
+
+    $types = array('redhen_membership', 'redhen_donation');
+
+    foreach ($types as $entity_type) {
+      // Update related Memberships.
+      $entity_type = 'redhen_membership';
+      $entity_key = ($entity_type == 'redhen_donation') ? 'contact_id' : 'entity_id';
+      $query = new EntityFieldQuery();
+      $query->entityCondition('entity_type', $entity_type);
+      if ($entity_type == 'redhen_membership') {
+        $query->propertyCondition('entity_type', 'redhen_contact');
+      }
+      $query->propertyCondition($entity_key, $contact_id);
+      $result = $query->execute();
+      if (!empty($result)) {
+        $rel_entities = entity_load($entity_type, array_keys($result[$entity_type]));
+        // Determine the property to change.
+        foreach ($rel_entities as $rel_entity) {
+          $rel_entity->{$entity_key} = $master_id;
+          $rel_entity->save();
+        }
+      }
+    }
+
+    // Delete old contacts.
+    if($delete_dupe){
+      redhen_contact_delete_multiple(array($contact_id => $contact_id));
+    }
+
+    $master_wrapper->save();
+
+    return TRUE;
+  }
+  catch (Exception $e) {
+    $transaction->rollback();
+    watchdog_exception('kidney_misc_merge_records', $e);
+    return FALSE;
+  }
+}
