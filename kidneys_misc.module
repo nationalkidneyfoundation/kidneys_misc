@@ -23,7 +23,6 @@ function kidneys_misc_reassign_contact_donation_membership(RedhenContact $master
 
     foreach ($types as $entity_type) {
       // Update related Memberships.
-      $entity_type = 'redhen_membership';
       $entity_key = ($entity_type == 'redhen_donation') ? 'contact_id' : 'entity_id';
       $query = new EntityFieldQuery();
       $query->entityCondition('entity_type', $entity_type);
