@@ -1,0 +1,14 @@
+name = kidneys_misc
+core = 7.x
+package = NKF
+version = 7.x-1.0
+project = kidneys_misc_features
+dependencies[] = rules
+dependencies[] = views
+features[ctools][] = views:views_default:3.0
+features[features_api][] = api:2
+features[rules_config][] = rules_membership_merge_contacts
+features[views_view][] = admin_merge_contacts
+features_exclude[dependencies][ctools] = ctools
+features_exclude[dependencies][entity] = entity
+features_exclude[dependencies][kidneys_misc] = kidneys_misc
