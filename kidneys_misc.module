@@ -56,3 +56,295 @@ function kidneys_misc_reassign_contact_donation_membership(RedhenContact $master
     return FALSE;
   }
 }
+
+
+/**
+ * Implements hook_menu().
+ */
+function nkf_misc_menu() {
+  // A redirect page for facebook shares that require it.
+  $items['nkf-share-complete'] = array(
+    'title' => 'Thank you for sharing',
+    'page callback' => 'nkf_misc_share_redirect',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+
+function kidneys_misc_get_category_tid_values($node) {
+  $return = '';
+  if (isset($node->field_base_category)) {
+
+    $multiple = 3;
+    foreach ($node->field_base_category[LANGUAGE_NONE] as $i => $value) {
+      $return .= str_repeat('<<' . $value['tid'] . '>> ', ($i >= $multiple) ? 1 : $multiple - $i);
+    }
+  }
+  return $return;
+}
+
+/**
+ * Implements hook_block_info().
+ *
+ * This hook declares what blocks are provided by the module.
+ */
+function kidneys_misc_block_info() {
+  $blocks['kidneys_misc_content_actions_top'] = array(
+    // info: The name of the block.
+    'info' => t('Content Actions Top'),
+  );
+  return $blocks;
+}
+/**
+ * Implements hook_block_view().
+ *
+ * This hook generates the contents of the blocks themselves.
+ */
+function kidneys_misc_block_view($delta = '') {
+  // The $delta parameter tells us which block is being requested.
+  $block = array();
+  switch ($delta) {
+    case 'kidneys_misc_content_actions_top':
+      $block['subject'] = '';
+      $block['content'] = kidneys_misc_get_content_actions_top_markup();
+    break;
+
+  }
+  return $block;
+}
+function kidneys_misc_get_content_actions() {
+  $node = menu_get_object();
+  if (!$node || !isset($node->nid)) {
+    return '';
+  }
+  $actions = array();
+  $title = rawurlencode($node->title);
+  //$teaser = field_view_field('node', $node, 'body', array(
+  //    'label'=> 'hidden',
+  //    'type' => 'text_summary_or_trimmed',
+  //    'settings'=> array('trim_length' => 200),
+  //  ));
+  //$teaser = rawurlencode(strip_tags(render($teaser), '<p><a>'));
+  $path = drupal_get_path_alias('node/' . $node->nid);
+  // Shared from National Kidney Foundation.
+  // Read more
+  // National Kidney Foundation
+  $teaser = '<p>Here is an article from National Kidney Foundation you might be interested in.</p>';
+  // add UTMs
+  $teaser .= '<p><a href="' . $path . '">' . $title . '</a></p>';
+  $teaser = rawurlencode($teaser);
+  if ($twitter = field_get_items('node', $node, 'field_action_tweet')) {
+    if ($twitter[0]['value']) {
+      $actions['tweet'] = array(
+        'icon' => 'icon-twitter',
+        'markup' => '<a href="https://twitter.com/intent/tweet?text=' . $title . '" class="caps button--twitter"><i class="icon-twitter"></i> <span class="display--none sm--display--inline">Tweet</span></a>'
+      );
+    }
+  }
+  if ($print = field_get_items('node', $node, 'field_action_print')) {
+    if ($print[0]['value']) {
+      $actions['print'] = array(
+        'icon' => 'icon-print',
+        'markup' => '<a href="#" class="caps button--gray-4 js--print-link"><i class="icon-print"></i> Print</a>'
+      );
+    }
+  }
+  if ($email = field_get_items('node', $node, 'field_action_email')) {
+    if ($email[0]['value']) {
+      //module_load_include('inc', 'print_mail', 'print_mail');
+      //$email_form = drupal_render(drupal_get_form('print_mail_form'));
+      $actions['email'] = array(
+        'icon' => 'icon-mail-alt',
+        'markup' => '<a href="mailto:?subject=Shared%20from%20National%20Kidney%20Foundation&body=' . $teaser . '" class="caps button--gray-4"><i class="icon-mail-alt"></i> Email</a>'
+        //'markup' => '<a href="/printmail/' . $node->nid . '" class="caps button--gray-4"><i class="icon-mail-alt"></i> Email</a>'
+        //'markup' => '<a href="#email" class="modal-trigger caps button--gray-4"><i class="icon-mail-alt"></i> Email</a>
+        //  <div id="email" class="modal padding--xl bg--white border-radius--md max-width--xxl center mfp-hide">'.$email_form.'</div>'
+      );
+    }
+  }
+  return $actions;
+}
+function kidneys_misc_get_content_actions_top_markup() {
+  $markup = '';
+  $actions = kidneys_misc_get_content_actions();
+  if (!empty($actions)) {
+    $markup = '<div class="sm--display--inline-block padding-y--md grid print--hide sm--font-size--sm">';
+    foreach ($actions as $key => $value) {
+      $markup .= '<div class="grid-cell padding-right--xs">';
+      $markup .= $value['markup'];
+      $markup .= '</div>';
+    }
+    $markup .= '</div>';
+  }
+  return $markup;
+}
+
+function kidneys_misc_get_action_path($action) {
+  switch ($action) {
+    case 'email':
+      $utm = '';
+      $path = 'mailto:;subject="test"';
+      break;
+    case 'print':
+      $utm = '';
+      $path = 'mailto:;subject="test"';
+      break;
+  }
+}
+
+/*
+function kidneys_misc_context_registry_alter(&$registry) {
+   if (isset($registry['conditions']['node_taxonomy'])){
+     $registry['conditions']['node_taxonomy']['plugin'] = 'crvt_context_condition_taxonomy_term';
+   }
+}
+*/
+
+/**
+ * Returns an empty page with javascript that closes the current window.
+ * Used as the redirect page for facebook shares that require a redirect uri.
+ * Allows us to close the share popup window when the user has finished sharing.
+ */
+function nkf_misc_share_redirect() {
+  return "<script>(function(){ window.close(); })();</script>";
+}
+
+/**
+ * Returns a facebook share url.
+ *
+ * @param  string $link
+ *   The url to share.
+ * @param  string $type
+ *   The type of facebook share intent link to use.
+ *   - 'feed_dialog': Allows for customized stories, outside of what is set in the metatags.
+ * @param Array $custom_options
+ *   An array of customized options for the type of share being used.
+ *
+ * @return string   The facebook intent url.
+ */
+function nkf_misc_get_facebook_intent($link, $type = NULL, $custom_options = NULL) {
+  switch ($type) {
+    // Used to create a facebook share link that uses a custom image,
+    // different from what is set in the metatags.
+    case 'feed_dialog':
+      // Build the redirect url.
+      $base_path = url(base_path(), ['absolute' => TRUE]);
+      $redirect_path = url(base_path(), ['absolute' => TRUE]) . 'nkf-share-complete';
+
+      // Pass in all the feed dialog parameters
+      $facebook_app_id = variable_get('nkf_settings_facebook_app_id', '');
+      $standard_options = array(
+          'app_id' => $facebook_app_id,
+          'display' => 'popup',
+          'link'   => $link,
+          'redirect_uri' => $redirect_path,
+        );
+
+      if ($custom_options) {
+        $standard_options = array_merge($standard_options, $custom_options);
+      }
+
+      $fb_share_url = url('https://www.facebook.com/dialog/feed', array('query' => $standard_options));
+      break;
+    // Standard facebook share, just sharing a link and all other data is scraped from the page.
+    default:
+      $fb_share_url = "https://www.facebook.com/sharer/sharer.php?u=" . urlencode($link);
+  }
+
+  return $fb_share_url;
+}
+
+/**
+ * Returns a twitter share url.
+ *
+ * @param  string $tweet
+ *   The text that should prepopulate the tweet (can include the url of the page to share).
+ * @return string
+ *   The twitter intent url.
+ */
+function nkf_misc_get_twitter_intent($tweet) {
+  return "https://twitter.com/intent/tweet?text=" . urlencode($tweet);
+}
+
+
+
+/**
+ * Returns an array of paths to share on each social network with the
+ * correct utm parameters attached.
+ *
+ * @param  array $share_types
+ *   - array of social networks to create paths for.
+ *     i.e ['facebook', 'twitter', 'tumblr']
+ * @param string $path
+ *   The absolute path of the page being shared.
+ * @param string $utm_campaign
+ *   A custom value to use for 'utm_campaign'.
+ * @param string $custom_share_source
+ *   A custom value to use for 'source'.
+ * @return
+ *   An array of paths, indexed by type.
+ */
+function nkf_misc_utm_share_paths($share_types, $path, $utm_campaign, $custom_share_source = NULL) {
+  foreach ($share_types as $type => $options) {
+    $utm_params = nkf_misc_utm_parameters(NULL,
+      array(
+        'utm_medium' => $type,
+        'utm_campaign' => $utm_campaign,
+      )
+    );
+    $share_paths[$type] = $path . $utm_params;
+
+    // Append the custom share source to the URL if we have one
+    if ($custom_share_source) {
+      $share_paths[$type] .= '&source=' . $custom_share_source;
+    }
+  }
+
+  return $share_paths;
+}
+
+/**
+ * Return the markup for share button.
+ *
+ * @param string $path
+ *   The absolute path of the page being shared.
+ * @param  array $share_types
+ *   - array of social networks to create paths for.
+ *     including the relevant parameters needed to create the custom intents.
+ * @param string $share_description
+ *   A custom value to use for 'utm_campaign'.
+ * @param string $custom_share_source
+ *   If included, the custom share source to be included in the url
+ * @return string
+ *   Share bar markup.
+ */
+function nkf_misc_share_bar($path, $share_types, $share_description, $classes = NULL, $custom_share_source = NULL) {
+  $share_utm_paths = nkf_misc_utm_share_paths($share_types, $path, $share_description, $custom_share_source);
+
+  $share_bar = '<ul class="' . $classes . '">';
+  $share_intents = [];
+
+  foreach ($share_types as $type => $options) {
+    switch ($type) {
+      case 'facebook':
+        $share_intents['facebook'] = nkf_misc_get_facebook_intent($share_utm_paths['facebook'], $options['type'], $options['parameters']);
+        break;
+      case 'twitter':
+        $share_intents['twitter'] = nkf_misc_get_twitter_intent($options['tweet'] . ' ' . $share_utm_paths['twitter']);
+        break;
+      case 'tumblr':
+        $options['caption'] = $options['caption'] . $share_utm_paths['tumblr'];
+        $share_intents['tumblr'] = nkf_misc_get_tumblr_intent($share_utm_paths['tumblr'], $options);
+      default:
+        break;
+    }
+
+    if ($share_intents[$type]) {
+      $share_bar .= '<li><a class="social-icon -' . $type . ' js-share-link ga-click" href="' . $share_intents[$type] . '" data-track-category="Share" data-track-label="' . $type .'" data-track-action="' . $share_description .'"><span>'. $type . '</span></a></li>';
+    }
+  }
+
+  return $share_bar . "</ul>";
+}

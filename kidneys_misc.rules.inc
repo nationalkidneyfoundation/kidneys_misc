@@ -69,6 +69,24 @@ function kidneys_misc_rules_action_info() {
     ),
   );
 
+  $actions['kidneys_misc_get_category_tid_values_rules'] = array(
+    'label' => t('Get category index weighted values'),
+    'group' => t('NKF'),
+    'parameter' => array(
+      'node' => array(
+        'type' => 'node',
+        'label' => t('Content'),
+      )
+    ),
+    'provides' => array(
+      'categories' => array(
+        'type' => 'text',
+        'label' => t('Category tid values'),
+        'save' => TRUE
+      ),
+    ),
+  );
+
   return $actions;
 }
 
@@ -92,6 +110,14 @@ function kidneys_misc_rules_condition_info() {
   );
 
   return $conditions;
+}
+
+
+function kidneys_misc_get_category_tid_values_rules($node) {
+  $values = kidneys_misc_get_category_tid_values($node);
+  return array(
+    'categories' => $values
+  );
 }
 
 /**
