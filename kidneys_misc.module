@@ -148,7 +148,7 @@ function kidneys_misc_get_content_actions() {
     if ($facebook[0]['value']) {
       $actions['facebook'] = array(
         'icon' => 'icon-facebook',
-        'markup' => '<a data-track="social" data-network="facebook" data-action="share" data-target="'.urlencode($path).'" href="https://www.facebook.com/sharer/sharer.php?u=' . urlencode($path) . '" class="caps button--facebook js-share-link"><i class="icon-facebook"></i> <span class="display--none sm--display--inline">Share</span></a>'
+        'markup' => '<a data-track="social" data-network="facebook" data-action="share" data-target="'.urlencode($path).'" href="https://www.facebook.com/sharer/sharer.php?u=' . urlencode($path) . '" class="caps button--facebook js--share-link"><i class="icon-facebook"></i> <span class="display--none sm--display--inline">Share</span></a>'
       );
     }
   }
@@ -351,7 +351,7 @@ function nkf_misc_share_bar($path, $share_types, $share_description, $classes = 
     }
 
     if ($share_intents[$type]) {
-      $share_bar .= '<li><a class="social-icon -' . $type . ' js-share-link ga-click" href="' . $share_intents[$type] . '" data-track-category="Share" data-track-label="' . $type .'" data-track-action="' . $share_description .'"><span>'. $type . '</span></a></li>';
+      $share_bar .= '<li><a class="social-icon -' . $type . ' js--share-link ga-click" href="' . $share_intents[$type] . '" data-track-category="Share" data-track-label="' . $type .'" data-track-action="' . $share_description .'"><span>'. $type . '</span></a></li>';
     }
   }
 
