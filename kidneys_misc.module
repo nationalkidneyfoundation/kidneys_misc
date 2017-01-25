@@ -127,7 +127,8 @@ function kidneys_misc_get_content_actions() {
   //    'settings'=> array('trim_length' => 200),
   //  ));
   //$teaser = rawurlencode(strip_tags(render($teaser), '<p><a>'));
-  $path = drupal_get_path_alias('node/' . $node->nid);
+  $base_path = url(base_path(), ['absolute' => TRUE]);
+  $path = $base_path . '/' . drupal_get_path_alias('node/' . $node->nid);
   // Shared from National Kidney Foundation.
   // Read more
   // National Kidney Foundation
@@ -140,7 +141,7 @@ function kidneys_misc_get_content_actions() {
     if ($twitter[0]['value']) {
       $actions['tweet'] = array(
         'icon' => 'icon-twitter',
-        'markup' => '<a data-track="social" data-network="twitter" data-action="share" data-target="'.urlencode($path).'" href="https://twitter.com/intent/tweet?via=nkf&url=' . urlencode($path) . '&text=' . urlencode($title) . '" class="caps button--twitter js-share-link"><i class="icon-twitter"></i> <span class="display--none sm--display--inline">Tweet</span></a>'
+        'markup' => '<a data-track="social" data-network="twitter" data-action="share" data-target="'.urlencode($path).'" href="https://twitter.com/intent/tweet?via=nkf&url=' . urlencode($path) . '&text=' . $title . '" class="caps button--twitter js--share-link"><i class="icon-twitter"></i> <span class="display--none sm--display--inline">Tweet</span></a>'
       );
     }
   }
