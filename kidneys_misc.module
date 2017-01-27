@@ -157,7 +157,7 @@ function kidneys_misc_get_content_actions() {
     if ($print[0]['value']) {
       $actions['print'] = array(
         'icon' => 'icon-print',
-        'markup' => '<a data-track="event" data-category="cta" data-action="print" data-label="'.urlencode($path).'" href="#" class="caps button--gray-4 js--print-link"><i class="icon-print"></i> Print</a>'
+        'markup' => '<a data-track="event" data-category="cta" data-action="print" data-label="'.urlencode($path).'" href="#" class="caps button--gray-4 js--print-link"><i class="icon-print"></i> <span class="display--none sm--display--inline">Print</span></a>'
       );
     }
   }
@@ -167,7 +167,7 @@ function kidneys_misc_get_content_actions() {
       //$email_form = drupal_render(drupal_get_form('print_mail_form'));
       $actions['email'] = array(
         'icon' => 'icon-mail-alt',
-        'markup' => '<a data-track="event" data-category="cta" data-action="email" data-label="'.urlencode($path).'" href="mailto:?subject=Shared%20from%20National%20Kidney%20Foundation&body=' . $teaser . '" class="caps button--gray-4"><i class="icon-mail-alt"></i> Email</a>'
+        'markup' => '<a data-track="event" data-category="cta" data-action="email" data-label="'.urlencode($path).'" href="mailto:?subject=Shared%20from%20National%20Kidney%20Foundation&body=' . $teaser . '" class="caps button--gray-4"><i class="icon-mail-alt"></i> <span class="display--none sm--display--inline">Email</span></a>'
         //'markup' => '<a href="/printmail/' . $node->nid . '" class="caps button--gray-4"><i class="icon-mail-alt"></i> Email</a>'
         //'markup' => '<a href="#email" class="modal-trigger caps button--gray-4"><i class="icon-mail-alt"></i> Email</a>
         //  <div id="email" class="modal padding--xl bg--white border-radius--md max-width--xxl center mfp-hide">'.$email_form.'</div>'
