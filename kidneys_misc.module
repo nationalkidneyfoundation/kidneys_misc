@@ -358,3 +358,25 @@ function nkf_misc_share_bar($path, $share_types, $share_description, $classes = 
 
   return $share_bar . "</ul>";
 }
+
+function kidneys_misc_create_redirect($source, $redirect) {
+  if (module_exists('path_auto')) {
+    $redirect = array(
+  		'source' => $source,
+  		'redirect' => $redirect,
+  	);
+  	path_redirect_save($redirect);
+  }
+}
+
+function nkf_misc_generate_hash() {
+  if (module_exists('path_auto')) {
+    do {
+      $hash = user_password(7);
+    } while (path_redirect_load_by_source($hash) !== FALSE);
+
+    return $hash;
+  }
+  return FALSE;
+
+}

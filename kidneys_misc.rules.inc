@@ -69,6 +69,32 @@ function kidneys_misc_rules_action_info() {
     ),
   );
 
+  $actions['kidneys_misc_create_redirect'] = array(
+    'label' => t('Create a redirect rule'),
+    'group' => t('NKF'),
+    'parameter' => array(
+      'source' => array(
+        'type' => 'text',
+        'label' => t('Source'),
+      ),
+      'redirect' => array(
+        'type' => 'text',
+        'label' => t('Redirect'),
+      )
+    ),
+  );
+  $actions['kidneys_misc_generate_hash_action'] = array(
+    'label' => t('Get a random hash for a url'),
+    'group' => t('NKF'),
+    'provides' => array(
+      'hash' => array(
+        'type' => 'text',
+        'label' => t('Hash'),
+        'save' => TRUE
+      ),
+    ),
+  );
+
   $actions['kidneys_misc_get_category_tid_values_rules'] = array(
     'label' => t('Get category index weighted values'),
     'group' => t('NKF'),
@@ -168,4 +194,11 @@ function kidneys_misc_rules_condition_exists_by_email($mail) {
     $contacts = redhen_contact_load_by_mail($mail);
     return is_array($contacts);
   }
+}
+
+function kidneys_misc_generate_hash_action() {
+  $hash = nkf_misc_generate_hash();
+  return array(
+    'hash' => $hash
+  );
 }
