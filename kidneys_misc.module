@@ -237,13 +237,21 @@ function nkf_misc_share_redirect() {
   return "<script>(function(){ window.close(); })();</script>";
 }
 
-function kidneys_misc_create_redirect($source, $redirect) {
+function kidneys_misc_create_redirect($s, $r) {
   if (module_exists('redirect')) {
+
     $redirect = new stdClass();
     redirect_object_prepare($redirect);
-    $redirect->source = $source;
-    $redirect->redirect = $redirect;
-  	redirect_save($redirect);
+    $redirect->source = $s;
+    $redirect->redirect = $r;
+
+    // Check if the redirect exists before saving.
+    $hash = redirect_hash($redirect);
+    $existing = redirect_load_by_hash($hash);
+    if (!$existing) {
+      redirect_save($redirect);
+    }
+
   }
 }
 
