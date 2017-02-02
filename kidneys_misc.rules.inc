@@ -202,7 +202,7 @@ function kidneys_misc_rules_condition_exists_by_email($mail) {
   }
 }
 
-function kidneys_misc_generate_hash_action($length) {
+function kidneys_misc_generate_hash_action($length = 7) {
   $hash = nkf_misc_generate_hash($length);
   return array(
     'hash' => $hash
