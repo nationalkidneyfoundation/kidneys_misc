@@ -203,7 +203,7 @@ function kidneys_misc_get_tweet_intent($node) {
 function kidney_misc_get_first_field_value($node, $field) {
   $field_items = field_get_items('node', $node, $field);
   if ($field_items) {
-    $field_first_item = reset($my_field_items);
+    $field_first_item = reset($field_items);
     $field_value = $field_first_item['value'];
     return $field_value;
   }
