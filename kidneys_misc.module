@@ -248,10 +248,10 @@ function kidneys_misc_create_redirect($source, $redirect) {
 }
 
 function nkf_misc_generate_hash() {
-  if (module_exists('path_auto')) {
+  if (module_exists('redirect')) {
     do {
       $hash = user_password(7);
-    } while (path_redirect_load_by_source($hash) !== FALSE);
+    } while (redirect_load_by_source($hash) !== FALSE);
 
     return $hash;
   }
