@@ -86,6 +86,12 @@ function kidneys_misc_rules_action_info() {
   $actions['kidneys_misc_generate_hash_action'] = array(
     'label' => t('Get a random hash for a url'),
     'group' => t('NKF'),
+    'parameter' => array(
+      'hash_length' => array(
+        'type' => 'integer',
+        'label' => t('Hash Length'),
+      ),
+    ),
     'provides' => array(
       'hash' => array(
         'type' => 'text',
@@ -196,8 +202,8 @@ function kidneys_misc_rules_condition_exists_by_email($mail) {
   }
 }
 
-function kidneys_misc_generate_hash_action() {
-  $hash = nkf_misc_generate_hash();
+function kidneys_misc_generate_hash_action($length) {
+  $hash = nkf_misc_generate_hash($length);
   return array(
     'hash' => $hash
   );

@@ -238,19 +238,19 @@ function nkf_misc_share_redirect() {
 }
 
 function kidneys_misc_create_redirect($source, $redirect) {
-  if (module_exists('path_auto')) {
-    $redirect = array(
-  		'source' => $source,
-  		'redirect' => $redirect,
-  	);
-  	path_redirect_save($redirect);
+  if (module_exists('redirect')) {
+    $redirect = new stdClass();
+    redirect_object_prepare($redirect);
+    $redirect->source = $source;
+    $redirect->redirect = $redirect;
+  	redirect_save($redirect);
   }
 }
 
-function nkf_misc_generate_hash() {
+function nkf_misc_generate_hash($length = 7) {
   if (module_exists('redirect')) {
     do {
-      $hash = user_password(7);
+      $hash = user_password($length);
     } while (redirect_load_by_source($hash) !== FALSE);
 
     return $hash;
