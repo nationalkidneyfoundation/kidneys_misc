@@ -153,6 +153,22 @@ function kidneys_misc_get_content_actions() {
       );
     }
   }
+  if ($pinterest = field_get_items('node', $node, 'field_action_pinterest')) {
+    if ($pinterest[0]['value']) {
+      $actions['pinterest'] = array(
+        'icon' => 'icon-pinterest',
+        'markup' => '<a data-track="social" data-network="pinterest" data-action="share" data-target="'.urlencode($path).'" href="http://pinterest.com/pin/create/button/?url=' . urlencode($path) . '&description='.$title.'" class="caps button--pinterest js--share-link"><i class="icon-facebook"></i> <span class="display--none sm--display--inline">Share</span></a>'
+      );
+    }
+  }
+  if ($linkedin = field_get_items('node', $node, 'field_action_linkedin')) {
+    if ($linkedin[0]['value']) {
+      $actions['linkedin'] = array(
+        'icon' => 'icon-pinterest',
+        'markup' => '<a data-track="social" data-network="pinterest" data-action="share" data-target="'.urlencode($path).'" href="' . kidneys_misc_get_linkedin_share($node) . '" class="caps button--facebook js--share-link"><i class="icon-linkedin"></i> <span class="display--none sm--display--inline">Share</span></a>'
+      );
+    }
+  }
   if ($print = field_get_items('node', $node, 'field_action_print')) {
     if ($print[0]['value']) {
       $actions['print'] = array(
@@ -198,6 +214,29 @@ function kidneys_misc_get_tweet_intent($node) {
     $query['hashtags'] = $hashtags;
   }
   return url($tweet, array('query' => $query));
+}
+function kidneys_misc_get_linkedin_share($node) {
+  $share = 'http://www.linkedin.com/shareArticle';
+  $teaser = field_view_field('node', $node, 'body', array(
+    'label'=> 'hidden',
+    'type' => 'text_summary_or_trimmed',
+    'settings'=> array('trim_length' =>150),
+  ));
+  $teaser = strip_tags(render($teaser));
+  $query['mini'] = 'true';
+  $query['title'] = $node->title;
+  $query['summary'] = $teaser;
+  $query['url'] = $base_path . '/' . drupal_get_path_alias('node/' . $node->nid);
+  $query['source'] = url(base_path(), ['absolute' => TRUE]);
+
+  return url($share, array('query' => $query));
+}
+
+function kidneys_misc_get_facebook_share($node) {
+
+}
+function kidneys_misc_get_pinterest_share($node) {
+
 }
 
 function kidney_misc_get_first_field_value($node, $field) {
