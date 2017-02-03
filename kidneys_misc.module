@@ -157,7 +157,7 @@ function kidneys_misc_get_content_actions() {
     if ($pinterest[0]['value']) {
       $actions['pinterest'] = array(
         'icon' => 'icon-pinterest',
-        'markup' => '<a data-track="social" data-network="pinterest" data-action="share" data-target="'.urlencode($path).'" href="http://pinterest.com/pin/create/button/?url=' . urlencode($path) . '&description='.$title.'" class="caps button--pinterest js--share-link"><i class="icon-facebook"></i> <span class="display--none sm--display--inline">Share</span></a>'
+        'markup' => '<a data-track="social" data-network="pinterest" data-action="share" data-target="'.urlencode($path).'" href="http://pinterest.com/pin/create/button/?url=' . urlencode($path) . '&description='.$title.'" class="caps button--pinterest js--share-link"><i class="icon-pinterest"></i> <span class="display--none sm--display--inline">Pin</span></a>'
       );
     }
   }
@@ -165,7 +165,7 @@ function kidneys_misc_get_content_actions() {
     if ($linkedin[0]['value']) {
       $actions['linkedin'] = array(
         'icon' => 'icon-pinterest',
-        'markup' => '<a data-track="social" data-network="pinterest" data-action="share" data-target="'.urlencode($path).'" href="' . kidneys_misc_get_linkedin_share($node) . '" class="caps button--facebook js--share-link"><i class="icon-linkedin"></i> <span class="display--none sm--display--inline">Share</span></a>'
+        'markup' => '<a data-track="social" data-network="linkedin" data-action="share" data-target="'.urlencode($path).'" href="' . kidneys_misc_get_linkedin_share($node) . '" class="caps button--linkedin js--share-link"><i class="icon-linkedin"></i> <span class="display--none sm--display--inline">Share</span></a>'
       );
     }
   }
