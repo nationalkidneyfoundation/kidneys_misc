@@ -74,7 +74,7 @@ function nkf_misc_menu() {
     'page callback' => 'nkf_misc_promotion_generator',
     'access arguments' => array('access content'),
     'page_arguments' => array(1, 2),
-    'delivery callback' => 'ajax_deliver',
+    //'delivery callback' => 'ajax_deliver',
     'type' => MENU_CALLBACK,
   );
   return $items;
@@ -100,9 +100,11 @@ function nkf_misc_promotion_generator($display, $query) {
     $commands[] = ajax_command_replace('#promotion--' . $display, $output);
     $page = array('#type' => 'ajax', '#commands' => $commands);
     //ajax_deliver($page);
+    ajax_deliver($output);
     return $output;
     return $page;
   } else {
+    ajax_deliver('TEST');
     return FALSE;
   }
 }
