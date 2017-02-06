@@ -69,9 +69,43 @@ function nkf_misc_menu() {
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
   );
+  $items['nkf-promotion/%display/%query'] = array(
+    'title' => 'Ajax endpoint for dynamic promos',
+    'page callback' => 'nkf_misc_promotion_generator',
+    'access arguments' => array('access content'),
+    'page_arguments' => array(1, 2),
+    'delivery callback' => 'ajax_deliver',
+    'type' => MENU_CALLBACK,
+  );
   return $items;
 }
 
+function nkf_misc_promotion_generator($display, $query) {
+  $view_name = 'promotion_generator';
+  // Instantiating the view.
+  $view = views_get_view($view_name);
+  $view->set_display($display_id);
+  // Set up contextual filter.
+  $args = array($query);
+  $view->set_arguments($args);
+
+  // Executing view
+  $view->pre_execute();
+  $view->execute();
+  $item = reset($view->result);
+  $relevance = $item->_entity_properties['search_api_relevance'];
+  if ($relevance > 0) {
+    $output = $view->render();
+    $commands = array();
+    $commands[] = ajax_command_replace('#promotion--' . $display, $output);
+    $page = array('#type' => 'ajax', '#commands' => $commands);
+    //ajax_deliver($page);
+    return $output;
+    return $page;
+  } else {
+    return FALSE;
+  }
+}
 
 function kidneys_misc_get_category_tid_values($node) {
   $return = '';
@@ -95,6 +129,14 @@ function kidneys_misc_block_info() {
     // info: The name of the block.
     'info' => t('Content Actions Top'),
   );
+  $blocks['kidneys_misc_promo_block'] = array(
+    // info: The name of the block.
+    'info' => t('NKF Promo - Block'),
+  );
+  $blocks['kidneys_misc_promo_button'] = array(
+    // info: The name of the block.
+    'info' => t('NKF Promo - button'),
+  );
   return $blocks;
 }
 /**
@@ -110,10 +152,23 @@ function kidneys_misc_block_view($delta = '') {
       $block['subject'] = '';
       $block['content'] = kidneys_misc_get_content_actions_top_markup();
     break;
+    case 'kidneys_misc_promo_block':
+      $path = drupal_get_path('module', 'kidneys_misc');
+      drupal_add_js($path . '/kidneys_misc.js');
+      $block['subject'] = '';
+      $block['content'] = '<div id="promotion--block"></div>';;
+    break;
+    case 'kidneys_misc_promo_button':
+      $path = drupal_get_path('module', 'kidneys_misc');
+      drupal_add_js($path . '/kidneys_misc.js');
+      $block['subject'] = '';
+      $block['content'] = '<div id="promotion--button"></div>';
+    break;
 
   }
   return $block;
 }
+
 function kidneys_misc_get_content_actions() {
   $node = menu_get_object();
   if (!$node || !isset($node->nid)) {
