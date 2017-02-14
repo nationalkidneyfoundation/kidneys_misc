@@ -161,21 +161,23 @@ function kidneys_misc_set_line_item_type_info_recurring($line_item) {
     $recurring_entity = commerce_recurring_load($line_item->data['recurring_entity']);
 
     // Load original order from recurring
-    $order_id = $recurring_entity->commerce_recurring_order[LANGUAGE_NONE][0]['target_id'];
-    $order = commerce_order_load($order_id);
+    if (!empty($recurring_entity->commerce_recurring_order[LANGUAGE_NONE])) {
+      $order_id = $recurring_entity->commerce_recurring_order[LANGUAGE_NONE][0]['target_id'];
+      $order = commerce_order_load($order_id);
 
-    // Load line item from order
-    $line_item_id = $order->commerce_line_items[LANGUAGE_NONE][0]['line_item_id'];
-    $original_line_item = commerce_line_item_load($line_item_id);
+      // Load line item from order
+      $line_item_id = $order->commerce_line_items[LANGUAGE_NONE][0]['line_item_id'];
+      $original_line_item = commerce_line_item_load($line_item_id);
 
-    // Set correct line itme type
-    $line_item->type = $original_line_item->type;
+      // Set correct line itme type
+      $line_item->type = $original_line_item->type;
 
-    // Set all fields on line item.
-    $original_line_item = (array) $original_line_item;
-    foreach ($original_line_item as $key => $value) {
-      if (strrpos($key, 'field_') !== FALSE) {
-        $line_item->{$key} = $value;
+      // Set all fields on line item.
+      $original_line_item = (array) $original_line_item;
+      foreach ($original_line_item as $key => $value) {
+        if (strrpos($key, 'field_') !== FALSE) {
+          $line_item->{$key} = $value;
+        }
       }
     }
   }
