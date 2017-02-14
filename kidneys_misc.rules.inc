@@ -119,7 +119,7 @@ function kidneys_misc_rules_action_info() {
     ),
   );
   $actions['kidneys_misc_set_line_item_type_info_recurring'] = array(
-    'label' => t('Set the correct line item type and info on a recuring gift'),
+    'label' => t('Set the correct line item type and info on a recurring gift'),
     'group' => t('NKF'),
     'parameter' => array(
       'line_item' => array(
@@ -178,6 +178,9 @@ function kidneys_misc_set_line_item_type_info_recurring($line_item) {
         if (strrpos($key, 'field_') !== FALSE) {
           $line_item->{$key} = $value;
         }
+      }
+      if (isset($line_item->field_sf_status)) {
+        $line_item->field_sf_status[LANGUAGE_NONE][0]['value'] = 'new';
       }
     }
   }
