@@ -211,6 +211,9 @@ function kidneys_misc_rules_action_fetch_by_mail($mail) {
 function kidneys_misc_dontion_gl_code($office_id, $gift_type = NULL) {
   $one = '10';
   $two = $office_id;
+  if (empty($two)) {
+    $two = '920';
+  }
   // Affiliates.
   if ($office_id >= 700 && $office_id < 800) {
     $three = '0000';
