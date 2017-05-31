@@ -81,6 +81,37 @@ function nkf_misc_menu() {
   return $items;
 }
 
+function kidneys_misc_search_api_solr_query_alter(array &$call_args, SearchApiQueryInterface $query) {
+
+  // Check to see if we search is for promos.
+  if ($call_args['params']['fq'][0] == 'ss_type:"promotion"') {
+    // This request should have come in via ajax.
+    // We want to grab appropriate URL params.
+    $query = !empty($_GET['query']) ? $_GET['query'] : '';
+    $query = drupal_json_decode($query);
+    $boost = '';
+    foreach ($query as $k => $v) {
+      $call_args['params']['bq'][] = $k . '^' . $v;
+    }
+  }
+  
+  // Boost exact matches for search boost fields// Boost exact title matched.
+  if (isset($query) && is_object($query) && method_exists($query, 'getKeys')) {
+    $keys = $query->getKeys();
+  	unset($keys['#conjunction']);
+    $len  = count($keys);
+    for ($i = 0; $i < $len; $i++){
+      $call_args['params']['bq'][] = 'tm_field_search_boost_term:"' . $keys[$i] . '"^10';
+      if (isset($keys[$i+1])) {
+        $call_args['params']['bq'][] = 'tm_field_search_boost_term:"' . $keys[$i] . ' ' . $keys[$i+1] . '"^15';
+      }
+      if (isset($keys[$i+2])) {
+        $call_args['params']['bq'][] = 'tm_field_search_boost_term:"' . $keys[$i] . ' ' . $keys[$i+1] . ' ' . $keys[$i+2]. '"^20';
+      }
+    }
+  }
+}
+
 function nkf_misc_promotion_generator2() {
 
 }
