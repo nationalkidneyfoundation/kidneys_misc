@@ -24,12 +24,18 @@ function kidneys_misc_features_default_rules_configuration() {
             "PROVIDE" : { "entity_fetched" : { "dupe_contact" : "dupe_contact" } }
           }
         },
+        { "entity_fetch" : {
+            "USING" : { "type" : "user", "id" : [ "dupe-contact:user:uid" ] },
+            "PROVIDE" : { "entity_fetched" : { "dupe_user" : "dupe_user" } }
+          }
+        },
         { "kidneys_misc_reassign_contact_donation_membership" : {
             "master" : [ "master-contact" ],
             "dupe" : [ "dupe-contact" ],
             "delete_dupe" : "1"
           }
-        }
+        },
+        { "entity_delete" : { "data" : [ "dupe-user" ] } }
       ]
     }
   }');

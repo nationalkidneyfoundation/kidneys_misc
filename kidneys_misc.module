@@ -52,7 +52,6 @@ function kidneys_misc_reassign_contact_donation_membership(RedhenContact $master
   }
   catch (Exception $e) {
     $transaction->rollback();
-    watchdog_exception('kidney_misc_merge_records', $e);
     return FALSE;
   }
 }
@@ -61,19 +60,19 @@ function kidneys_misc_reassign_contact_donation_membership(RedhenContact $master
 /**
  * Implements hook_menu().
  */
-function nkf_misc_menu() {
+function kidneys_misc_menu() {
   // A redirect page for facebook shares that require it.
   $items['nkf-share-complete'] = array(
     'title' => 'Thank you for sharing',
-    'page callback' => 'nkf_misc_share_redirect',
+    'page callback' => 'kidneys_misc_share_redirect',
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
   );
   $items['nkf-promotion'] = array(
     'title' => 'Ajax endpoint for dynamic promos',
-    'page callback' => 'nkf_misc_promotion_generator',
-    'access arguments' => TRUE,
-    //'page_arguments' => array(1, 2),
+    'page callback' => 'kidneys_misc_promotion_generator',
+    'access arguments' => array('access content'),
+    'page_arguments' => array(1, 2),
     'delivery callback' => 'ajax_deliver',
     'type' => MENU_CALLBACK,
   );
@@ -81,73 +80,181 @@ function nkf_misc_menu() {
   return $items;
 }
 
-function kidneys_misc_search_api_solr_query_alter(array &$call_args, SearchApiQueryInterface $query) {
 
-  // Check to see if we search is for promos.
-  if ($call_args['params']['fq'][0] == 'ss_type:"promotion"') {
-    // This request should have come in via ajax.
-    // We want to grab appropriate URL params.
-    $query = !empty($_GET['query']) ? $_GET['query'] : '';
+function kidneys_misc_get_geo_from_ip($ip) {
+  $data = &drupal_static(__FUNCTION__ . $ip, FALSE);
+  if(empty($data)) {
+    $url = 'https://freegeoip.net/json/'. $ip;
+    $response = drupal_http_request($url, array('timeout' => 3));
+    //$response = drupal_http_request($url);
+    $data = drupal_json_decode($response->data);
+  }
+  return $data;
+}
+
+function kidneys_misc_get_proximate_events($lat, $lon, $dis = 100) {
+  $results = db_query(
+    'SELECT
+      n.nid,  (
+        3959 * acos (
+          cos ( radians(:lat) )
+          * cos( radians( g.field_base_geofield_lat ) )
+          * cos( radians( g.field_base_geofield_lon ) - radians(:lon) )
+          + sin ( radians(:lat) )
+          * sin( radians( g.field_base_geofield_lat ) )
+        )
+      ) AS distance
+    FROM {node} n
+      INNER JOIN {field_data_field_base_related_entity} r on r.entity_id = n.nid
+      INNER JOIN {field_data_field_base_geofield} g on g.entity_id = r.field_base_related_entity_target_id
+      INNER JOIN {field_data_field_base_date_time} d on d.entity_id = r.field_base_related_entity_target_id
+    WHERE
+      n.type = :type
+      AND d.field_base_date_time_value >= NOW()
+      AND d.field_base_date_time_value < DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 46 day)
+    HAVING distance < :dis
+    ORDER BY distance
+    LIMIT 0 , 1', array(':type'=> 'promotion', ':lat' => $lat, ':lon' => $lon, ':dis' => $dis)
+  );
+  if ($results->rowCount() > 0) {
+    return $results->fetchObject();
+  } else {
+    return FALSE;
+  }
+}
+
+function kidneys_misc_list_promos() {
+  $promos = &drupal_static(__FUNCTION__);
+  if(empty($promos)) {
+    $query = db_select('node', 'n');
+    $query->innerjoin('field_data_field_promo_include_paths', 'p', 'p.entity_id = n.nid');
+    $query->leftjoin('field_data_field_promo_button', 'bu', 'bu.entity_id = n.nid');
+    $query->leftjoin('field_data_field_promo_block', 'bl', 'bl.entity_id = n.nid');
+    $query->leftjoin('field_data_field_promo_band', 'ba', 'ba.entity_id = n.nid');
+    $query->leftjoin('field_data_field_promo_hero', 'he', 'he.entity_id = n.nid');
+    $query->leftjoin('field_data_field_promo_modal', 'mo', 'mo.entity_id = n.nid');
+    $query->isNotNull('p.field_promo_include_paths_value');
+    $query->addField('n', 'nid', 'nid');
+    $query->addField('n', 'title', 'title');
+    $query->addField('p', 'field_promo_include_paths_value', 'path');
+    $query->addField('bu', 'field_promo_button_value', 'button');
+    $query->addField('bl', 'field_promo_block_value', 'block');
+    $query->addField('ba', 'field_promo_band_value', 'band');
+    $query->addField('he', 'field_promo_hero_value', 'hero');
+    $query->addField('mo', 'field_promo_modal_value', 'modal');
+
+    $result = $query->execute();
+    $promos = $result->fetchAll();
+    //while ($record = $result->fetchAll()) {
+    //  $promos[] = $record;
+    //}
+  }
+
+  return $promos;
+}
+
+function kidneys_misc_promotion_generator() {
+
+  $display = !empty($_GET['display']) ? $_GET['display'] : 'default';
+  $query = !empty($_GET['query']) ? $_GET['query'] : '';
+  $calling_q = !empty($_GET['calling_q']) ? $_GET['calling_q'] : '';
+  $output = NULL;
+
+  // See if the current path matches any promos directly.
+  $path_promos = kidneys_misc_list_promos();
+  $path = drupal_strtolower(drupal_get_path_alias($_GET['calling_q']));
+  foreach($path_promos as $p) {
+    // If we have a pattern match and an approriate display.
+    if (drupal_match_path($path, drupal_strtolower($p->path)) && !empty($p->{$display})) {
+      $node = node_load($p->nid);
+      $output = field_view_field('node', $node, 'field_promo_' . $display, array('label'=> 'hidden'));
+      $output =  render($output);
+      break;
+    }
+  }
+
+  // If we haven't already found our promo...
+  if (!$output) {
     $query = drupal_json_decode($query);
-    $boost = '';
-    foreach ($query as $k => $v) {
-      $call_args['params']['bq'][] = $k . '^' . $v;
+    $keys = implode(' ', array_keys($query));
+
+    $geo = kidneys_misc_get_geo_from_ip($_SERVER['REMOTE_ADDR']);
+
+    if (!empty($geo['latitude']) && !empty($geo['longitude']) && $event = kidneys_misc_get_proximate_events($geo['latitude'], $geo['longitude'])) {
+      $node = node_load($event->nid);
+    } else {
+      $query = search_api_query('default_node_index', array('conjunction'=>'OR'));
+
+      //$query = $index->query();
+      $query->condition('type', 'promotion', '=');
+      $query->condition('field_promo_' . $display . ':value', NULL, '<>');
+      $query->fields(array('field_base_category_index'));
+      $query->keys($keys);
+      $results = $query->execute();
+
+      if (!empty($results['results'])) {
+        $results = $results['results'];
+        $first = reset($results);
+        $node = node_load($first['id']);
+      } else {
+        $output = '';
+      }
     }
   }
-  
-  // Boost exact matches for search boost fields// Boost exact title matched.
-  if (isset($query) && is_object($query) && method_exists($query, 'getKeys')) {
-    $keys = $query->getKeys();
-  	unset($keys['#conjunction']);
-    $len  = count($keys);
-    for ($i = 0; $i < $len; $i++){
-      $call_args['params']['bq'][] = 'tm_field_search_boost_term:"' . $keys[$i] . '"^10';
-      if (isset($keys[$i+1])) {
-        $call_args['params']['bq'][] = 'tm_field_search_boost_term:"' . $keys[$i] . ' ' . $keys[$i+1] . '"^15';
-      }
-      if (isset($keys[$i+2])) {
-        $call_args['params']['bq'][] = 'tm_field_search_boost_term:"' . $keys[$i] . ' ' . $keys[$i+1] . ' ' . $keys[$i+2]. '"^20';
+  if (!empty($node)) {
+    $output_wrapper = '<div data-id="' . $node->nid . '" data-promo-path="' . $path . '" data-promo-name="' . drupal_strtolower($node->title) . '">';
+  } else {
+    $output_wrapper = '<div>';
+  }
+
+  $output =  $output_wrapper . $output;
+  $output .= '</div>';
+  $commands[] = ajax_command_replace('#promotion--' . $display . ' > *', $output);
+  $commands[] = ajax_command_invoke('#promotion--' . $display . ' > *', 'hide');
+  $commands[] = ajax_command_invoke('#promotion--' . $display . ' > *', 'fadeIn', array('slow'));
+  $page = array('#type' => 'ajax', '#commands' => $commands);
+
+  return $page;
+}
+// Add node categories to js object.
+function kidneys_misc_page_alter($page) {
+  drupal_add_js(
+    array(
+      'calling_q' => drupal_strtolower($_GET['q']),
+    ),
+    'setting'
+  );
+  $node = menu_get_object();
+  if ($node) {
+    $category_index = kidneys_misc_get_first_field_value($node, 'field_base_category_index');
+    $categories = explode(' ', trim($category_index));
+    $category_new = array();
+    foreach($categories as $category) {
+      $category = str_replace('<<', '', $category);
+      $category = str_replace('>>', '', $category);
+      if (empty($category_new[$category])) {
+        $category_new[$category] = 1;
+      } else {
+        $category_new[$category] = $category_new[$category] + 1;
       }
     }
+    if ($category_index) {
+      //$category_new = str_replace('=', ':', http_build_query($category_new, null, ','));
+
+      drupal_add_js(
+        array(
+          'kidneys_categories' => drupal_json_encode($category_new),
+          'kidneys_categories_processed' => FALSE,
+        ),
+        'setting'
+      );
+    }
   }
-}
-
-function nkf_misc_promotion_generator2() {
-
-}
-function nkf_misc_promotion_generator($display = 'block', $query = 'test') {
-  $view_name = 'promotion_generator';
-  // Instantiating the view.
-  $view = views_get_view($view_name);
-  $view->set_display($display);
-  // Set up contextual filter.
-  $args = array($query);
-  $view->set_arguments($args);
-
-  // Executing view
-  $view->pre_execute();
-  $view->execute();
-  $item = reset($view->result);
-  $relevance = $item->_entity_properties['search_api_relevance'];
-  //if ($relevance > 0) {
-    $output = $view->render();
-    $commands = array();
-    $commands[] = ajax_command_replace('#promotion--' . $display, $output);
-    $page = array('#type' => 'ajax', '#commands' => $commands);
-    //ajax_deliver($page);
-    //ajax_deliver($output);
-    //return $output;
-    return $page;
-  //} else {
-  //  ajax_deliver('TEST');
-  //  return FALSE;
-  //}
 }
 
 function kidneys_misc_get_category_tid_values($node) {
   $return = '';
   if (isset($node->field_base_category)) {
-
     $multiple = 3;
     foreach ($node->field_base_category[LANGUAGE_NONE] as $i => $value) {
       $return .= str_repeat('<<' . $value['tid'] . '>> ', ($i >= $multiple) ? 1 : $multiple - $i);
@@ -163,18 +270,35 @@ function kidneys_misc_get_category_tid_values($node) {
  */
 function kidneys_misc_block_info() {
   $blocks['kidneys_misc_content_actions_top'] = array(
-    // info: The name of the block.
     'info' => t('Content Actions Top'),
   );
+  $blocks['kidneys_misc_pardot_progressive'] = array(
+    'info' => t('Pardot Progressive Modal Form'),
+  );
   $blocks['kidneys_misc_promo_block'] = array(
-    // info: The name of the block.
     'info' => t('NKF Promo - Block'),
   );
   $blocks['kidneys_misc_promo_button'] = array(
-    // info: The name of the block.
-    'info' => t('NKF Promo - button'),
+    'info' => t('NKF Promo - Button'),
+  );
+  $blocks['kidneys_misc_promo_band'] = array(
+    'info' => t('NKF Promo - Band'),
+  );
+  $blocks['kidneys_misc_promo_banner'] = array(
+    'info' => t('NKF Promo - Band'),
+  );
+  $blocks['kidneys_misc_promo_hero'] = array(
+    'info' => t('NKF Promo - hero'),
+  );
+  $blocks['kidneys_misc_promo_modal'] = array(
+    'info' => t('NKF Promo - modal'),
   );
   return $blocks;
+}
+
+function kidneys_misc_init() {
+  $path = drupal_get_path('module', 'kidneys_misc');
+  drupal_add_js($path . '/kidneys_misc.js');
 }
 /**
  * Implements hook_block_view().
@@ -185,25 +309,141 @@ function kidneys_misc_block_view($delta = '') {
   // The $delta parameter tells us which block is being requested.
   $block = array();
   switch ($delta) {
+    case 'kidneys_misc_pardot_progressive':
+      $block['subject'] = '';
+      $block['content'] = kidneys_misc_get_pardot();
+    break;
     case 'kidneys_misc_content_actions_top':
       $block['subject'] = '';
       $block['content'] = kidneys_misc_get_content_actions_top_markup();
     break;
     case 'kidneys_misc_promo_block':
-      $path = drupal_get_path('module', 'kidneys_misc');
-      drupal_add_js($path . '/kidneys_misc.js');
+      drupal_add_library('system', 'jquery.cookie');
+      drupal_add_library('system', 'drupal.ajax');
       $block['subject'] = '';
-      $block['content'] = '<div id="promotion--block"></div>';;
+      $block['content'] = '<div id="promotion--block" data-promo="block" class="promotion">
+        <div class="animate--shimmer padding--xl bg--gray-1 text-align--center">
+          <div class="padding-sm width--70 height--xxs margin-y--xs bg--gray-2 center"></div>
+          <div class="padding-sm width--40 height--xxs margin-y--xs bg--gray-2 center"></div>
+          <div class="padding-sm width--60 height--xxs margin-y--xs bg--gray-2 center"></div>
+          <div class="button--gray-2 margin-y--lg color--gray-2 padding-y--md width--50 center"></div>
+        </div>
+      </div>';
     break;
     case 'kidneys_misc_promo_button':
-      $path = drupal_get_path('module', 'kidneys_misc');
-      drupal_add_js($path . '/kidneys_misc.js');
+      drupal_add_library('system', 'jquery.cookie');
+      drupal_add_library('system', 'drupal.ajax');
+
       $block['subject'] = '';
-      $block['content'] = '<div id="promotion--button"></div>';
+      $block['content'] = '<div id="promotion--button" data-promo="button" class="promotion">
+        <div class="button opacity--10 bg--black animate--shimmer padding-y--md width--md"></div>
+      </div>';
+    break;
+    case 'kidneys_misc_promo_band':
+      drupal_add_library('system', 'jquery.cookie');
+      drupal_add_library('system', 'drupal.ajax');
+
+      $block['subject'] = '';
+      $block['content'] = '<div id="promotion--band" data-promo="band" class="promotion">
+        <div class="bg--gray-1 animate--shimmer padding--md width--100"></div>
+      </div>';
+    break;
+    case 'kidneys_misc_promo_hero':
+      drupal_add_library('system', 'jquery.cookie');
+      drupal_add_library('system', 'drupal.ajax');
+
+      $block['subject'] = '';
+      $block['content'] = '<div id="promotion--hero" data-promo="hero" class="promotion">
+        <div class="animate--shimmer padding--xl bg--gray-1 text-align--center">
+          <div class="padding-sm width--70 height--xxs margin-y--xs bg--gray-2 center"></div>
+          <div class="padding-sm width--40 height--xxs margin-y--xs bg--gray-2 center"></div>
+          <div class="padding-sm width--60 height--xxs margin-y--xs bg--gray-2 center"></div>
+          <div class="button--gray-2 margin-y--lg color--gray-2 padding-y--md width--50 center"></div>
+        </div>
+      </div>';
+    break;
+    case 'kidneys_misc_promo_banner':
+      drupal_add_library('system', 'jquery.cookie');
+      drupal_add_library('system', 'drupal.ajax');
+
+      $block['subject'] = '';
+      $block['content'] = '<div id="promotion--banner" data-promo="hero" class="promotion">
+        <div class="animate--shimmer padding--xl bg--gray-1 text-align--center">
+          <div class="padding-sm width--70 height--xxs margin-y--xs bg--gray-2 center"></div>
+          <div class="padding-sm width--40 height--xxs margin-y--xs bg--gray-2 center"></div>
+          <div class="padding-sm width--60 height--xxs margin-y--xs bg--gray-2 center"></div>
+          <div class="button--gray-2 margin-y--lg color--gray-2 padding-y--md width--50 center"></div>
+        </div>
+      </div>';
+    break;
+    case 'kidneys_misc_promo_modal':
+      drupal_add_library('system', 'jquery.cookie');
+      drupal_add_library('system', 'drupal.ajax');
+
+      $block['subject'] = '';
+      $block['content'] = '<div id="promotion--modal" data-promo="modal" class="promotion">
+        <div class="animate--shimmer padding--xl bg--gray-1 text-align--center">
+          <div class="padding-sm width--70 height--xxs margin-y--xs bg--gray-2 center"></div>
+          <div class="padding-sm width--40 height--xxs margin-y--xs bg--gray-2 center"></div>
+          <div class="padding-sm width--60 height--xxs margin-y--xs bg--gray-2 center"></div>
+          <div class="button--gray-2 margin-y--lg color--gray-2 padding-y--md width--50 center"></div>
+        </div>
+      </div>';
     break;
 
   }
   return $block;
+}
+
+function kidneys_misc_get_pardot() {
+  $path = drupal_get_path('module', 'kidneys_misc');
+  drupal_add_js($path . '/kidneys_misc_pardot.js');
+  // add pop js/class
+  $magnificpath = libraries_get_path('magnific_popup');
+  drupal_add_js($magnificpath . '/dist/jquery.magnific-popup.js');
+  drupal_add_css($magnificpath . '/dist/magnific-popup.css');
+  $markup = '<div class="pardot-email">';
+  $markup .= '<iframe src="http://www3.kidney.org/l/219342/2016-08-31/77f" width="100%" type="text/html" frameborder="0" allowTransparency="true" style="border: 0"></iframe>';
+  $markup .= "</div>";
+
+  $markup .= '<div id="pardot-progressive" class="white-popup mfp-hide" style="position:relative;background:white; padding:25px;width:auto;max-width:400px;margin:0 auto">';
+  //$markup .= '<iframe src="http://www3.kidney.org/l/219342/2017-06-02/q74n" width="100%" height="500" type="text/html" frameborder="0" allowTransparency="true" style="border: 0"></iframe>';
+  $markup .= "</div>";
+  return $markup;
+}
+
+/**
+  * hook_search_api_solr_query_alter().
+*/
+
+function kidneys_misc_search_api_solr_query_alter(array &$call_args, SearchApiQueryInterface $query) {
+
+  // Check to see if we search is for promos.
+  if ($call_args['params']['fq'][0] == 'ss_type:"promotion"') {
+    // This request should have come in via ajax.
+    // We want to grab appropriate URL params.
+    $query = !empty($_GET['query']) ? $_GET['query'] : '';
+    $query = drupal_json_decode($query);
+    $boost = '';
+    foreach ($query as $k => $v) {
+      $call_args['params']['bq'][] = $k . '^' . $v;
+    }
+  }
+  // Boost exact matches for search boost fields// Boost exact title matched.
+  if (isset($query) && is_object($query) && method_exists($query, 'getKeys')) {
+    $keys = $query->getKeys();
+  	unset($keys['#conjunction']);
+    $len  = count($keys);
+    for ($i = 0; $i < $len; $i++){
+      $call_args['params']['bq'][] = 'tm_field_search_boost_term:"' . $keys[$i] . '"^10';
+      if (isset($keys[$i+1])) {
+        $call_args['params']['bq'][] = 'tm_field_search_boost_term:"' . $keys[$i] . ' ' . $keys[$i+1] . '"^15';
+      }
+      if (isset($keys[$i+2])) {
+        $call_args['params']['bq'][] = 'tm_field_search_boost_term:"' . $keys[$i] . ' ' . $keys[$i+1] . ' ' . $keys[$i+2]. '"^20';
+      }
+    }
+  }
 }
 
 function kidneys_misc_get_content_actions() {
@@ -286,10 +526,10 @@ function kidneys_misc_get_content_actions() {
 }
 
 function kidneys_misc_get_tweet_intent($node) {
-  $text = kidney_misc_get_first_field_value($node, 'field_tweet_text');
-  $via = kidney_misc_get_first_field_value($node, 'field_tweet_via');
-  $hashtags = kidney_misc_get_first_field_value($node, 'field_tweet_hashtag');
-  $url = kidney_misc_get_first_field_value($node, 'field_url_hash');
+  $text = kidneys_misc_get_first_field_value($node, 'field_tweet_text');
+  $via = kidneys_misc_get_first_field_value($node, 'field_tweet_via');
+  $hashtags = kidneys_misc_get_first_field_value($node, 'field_tweet_hashtag');
+  $url = kidneys_misc_get_first_field_value($node, 'field_url_hash');
   $tweet = 'https://twitter.com/intent/tweet';
   $query['text'] = ($text) ? $text : $node->title;
   if ($url) {
@@ -331,7 +571,7 @@ function kidneys_misc_get_pinterest_share($node) {
 
 }
 
-function kidney_misc_get_first_field_value($node, $field) {
+function kidneys_misc_get_first_field_value($node, $field) {
   $field_items = field_get_items('node', $node, $field);
   if ($field_items) {
     $field_first_item = reset($field_items);
@@ -364,7 +604,7 @@ function kidneys_misc_get_content_actions_top_markup() {
  * Used as the redirect page for facebook shares that require a redirect uri.
  * Allows us to close the share popup window when the user has finished sharing.
  */
-function nkf_misc_share_redirect() {
+function kidneys_misc_share_redirect() {
   return "<script>(function(){ window.close(); })();</script>";
 }
 
@@ -386,7 +626,7 @@ function kidneys_misc_create_redirect($s, $r) {
   }
 }
 
-function nkf_misc_generate_hash($length = 7) {
+function kidneys_misc_generate_hash($length = 7) {
   if (module_exists('redirect')) {
     do {
       $hash = user_password($length);
