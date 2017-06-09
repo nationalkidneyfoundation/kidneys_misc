@@ -189,7 +189,7 @@ function kidneys_misc_promotion_generator() {
       $query->condition('type', 'promotion', '=');
       $query->condition('field_promo_' . $display . ':value', NULL, '<>');
       $query->fields(array('title','field_base_category_index'));
-      $keys[] = 'default';
+      $keys .= ' default';
       $query->keys($keys);
       $results = $query->execute();
 
