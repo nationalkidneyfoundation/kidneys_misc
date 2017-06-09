@@ -325,7 +325,7 @@ function kidneys_misc_block_info() {
     'info' => t('NKF Promo - Band'),
   );
   $blocks['kidneys_misc_promo_banner'] = array(
-    'info' => t('NKF Promo - Band'),
+    'info' => t('NKF Promo - Banner'),
   );
   $blocks['kidneys_misc_promo_hero'] = array(
     'info' => t('NKF Promo - hero'),
