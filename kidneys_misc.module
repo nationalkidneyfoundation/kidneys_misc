@@ -92,7 +92,7 @@ function kidneys_misc_get_geo_from_ip($ip) {
   return $data;
 }
 
-function kidneys_misc_get_proximate_events($lat, $lon, $dis = 100) {
+function kidneys_misc_get_proximate_events($lat, $lon, $field, $dis = 50) {
   $results = db_query(
     'SELECT
       n.nid,  (
@@ -108,6 +108,8 @@ function kidneys_misc_get_proximate_events($lat, $lon, $dis = 100) {
       INNER JOIN {field_data_field_base_related_entity} r on r.entity_id = n.nid
       INNER JOIN {field_data_field_base_geofield} g on g.entity_id = r.field_base_related_entity_target_id
       INNER JOIN {field_data_field_base_date_time} d on d.entity_id = r.field_base_related_entity_target_id
+      INNER JOIN {field_data_field_promo_' . $field . '} f on f.entity_id = n.nid
+
     WHERE
       n.type = :type
       AND d.field_base_date_time_value >= NOW()
@@ -154,11 +156,10 @@ function kidneys_misc_list_promos() {
 }
 
 function kidneys_misc_promotion_generator() {
-
-  $display = !empty($_GET['display']) ? $_GET['display'] : 'default';
+  $display = !empty($_GET['display']) ? $_GET['display'] : '';
   $query = !empty($_GET['query']) ? $_GET['query'] : '';
   $calling_q = !empty($_GET['calling_q']) ? $_GET['calling_q'] : '';
-  $output = NULL;
+  $node = NULL;
 
   // See if the current path matches any promos directly.
   $path_promos = kidneys_misc_list_promos();
@@ -167,20 +168,18 @@ function kidneys_misc_promotion_generator() {
     // If we have a pattern match and an approriate display.
     if (drupal_match_path($path, drupal_strtolower($p->path)) && !empty($p->{$display})) {
       $node = node_load($p->nid);
-      $output = field_view_field('node', $node, 'field_promo_' . $display, array('label'=> 'hidden'));
-      $output =  render($output);
       break;
     }
   }
 
   // If we haven't already found our promo...
-  if (!$output) {
+  if (!$node) {
     $query = drupal_json_decode($query);
     $keys = implode(' ', array_keys($query));
 
     $geo = kidneys_misc_get_geo_from_ip($_SERVER['REMOTE_ADDR']);
 
-    if (!empty($geo['latitude']) && !empty($geo['longitude']) && $event = kidneys_misc_get_proximate_events($geo['latitude'], $geo['longitude'])) {
+    if (!empty($geo['latitude']) && !empty($geo['longitude']) && $event = kidneys_misc_get_proximate_events($geo['latitude'], $geo['longitude'], $display)) {
       $node = node_load($event->nid);
     } else {
       $query = search_api_query('default_node_index', array('conjunction'=>'OR'));
@@ -197,19 +196,19 @@ function kidneys_misc_promotion_generator() {
         $results = $results['results'];
         $first = reset($results);
         $node = node_load($first['id']);
-      } else {
-        $output = '';
       }
     }
   }
-  if (!empty($node)) {
-    $output_wrapper = '<div data-id="' . $node->nid . '" data-promo-path="' . $path . '" data-promo-name="' . drupal_strtolower($node->title) . '">';
+  if ($node) {
+    $output = '<div data-id="' . $node->nid . '" data-promo-path="' . $path . '" data-promo-name="' . drupal_strtolower($node->title) . '">';
+    $field = field_view_field('node', $node, 'field_promo_' . $display, array('label'=> 'hidden'));
+    $field =  render($field);
+    $output .= $field;
+    $output .= '</div>';
   } else {
-    $output_wrapper = '<div>';
+    $output = '<div></div>';
   }
 
-  $output =  $output_wrapper . $output;
-  $output .= '</div>';
   $commands[] = ajax_command_replace('#promotion--' . $display . ' > *', $output);
   $commands[] = ajax_command_invoke('#promotion--' . $display . ' > *', 'hide');
   $commands[] = ajax_command_invoke('#promotion--' . $display . ' > *', 'fadeIn', array('slow'));
@@ -418,7 +417,6 @@ function kidneys_misc_get_pardot() {
 */
 
 function kidneys_misc_search_api_solr_query_alter(array &$call_args, SearchApiQueryInterface $query) {
-
   // Check to see if we search is for promos.
   if ($call_args['params']['fq'][0] == 'ss_type:"promotion"') {
     // This request should have come in via ajax.
@@ -428,6 +426,7 @@ function kidneys_misc_search_api_solr_query_alter(array &$call_args, SearchApiQu
     foreach ($query as $k => $v) {
       $call_args['params']['bq'][] = $k . '^' . $v;
     }
+
   }
   // Boost exact matches for search boost fields// Boost exact title matched.
   if (isset($query) && is_object($query) && method_exists($query, 'getKeys')) {
