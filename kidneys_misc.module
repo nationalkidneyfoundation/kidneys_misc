@@ -76,23 +76,44 @@ function kidneys_misc_menu() {
     'delivery callback' => 'ajax_deliver',
     'type' => MENU_CALLBACK,
   );
-
   return $items;
 }
 
-
+/**
+ * Geolocate from IP address.
+ *
+ * @param String $ip
+ *   The master RedHen Contact.
+ * @return Object
+ *   Object with lon and lat.
+ */
 function kidneys_misc_get_geo_from_ip($ip) {
   $data = &drupal_static(__FUNCTION__ . $ip, FALSE);
   if(empty($data)) {
     $url = 'https://freegeoip.net/json/'. $ip;
     $response = drupal_http_request($url, array('timeout' => 3));
-    //$response = drupal_http_request($url);
     $data = drupal_json_decode($response->data);
   }
   return $data;
 }
 
-function kidneys_misc_get_proximate_events($lat, $lon, $field, $dis = 50) {
+/**
+ * Find promo with related event based on proximity.
+ *
+ * @param Double $lat
+ *   Latitude.
+ * @param Double $lon
+ *   Longitude.
+ * @param String $field
+ *   The promo field we want to render.
+ * @param Int $dis
+ *   Radius for search.
+ * @param Int $days
+ *   Max days until event..
+ * @return Object
+ *   Object with nid and distance.
+ */
+function kidneys_misc_get_proximate_events($lat, $lon, $field, $dis = 50, $days = 45) {
   $results = db_query(
     'SELECT
       n.nid,  (
@@ -113,10 +134,10 @@ function kidneys_misc_get_proximate_events($lat, $lon, $field, $dis = 50) {
     WHERE
       n.type = :type
       AND d.field_base_date_time_value >= NOW()
-      AND d.field_base_date_time_value < DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 46 day)
+      AND d.field_base_date_time_value <= DATE_ADD(CURRENT_TIMESTAMP, INTERVAL :days day)
     HAVING distance < :dis
     ORDER BY distance
-    LIMIT 0 , 1', array(':type'=> 'promotion', ':lat' => $lat, ':lon' => $lon, ':dis' => $dis)
+    LIMIT 0 , 1', array(':type'=> 'promotion', ':lat' => $lat, ':lon' => $lon, ':dis' => $dis, ':days' => $days )
   );
   if ($results->rowCount() > 0) {
     return $results->fetchObject();
@@ -125,6 +146,13 @@ function kidneys_misc_get_proximate_events($lat, $lon, $field, $dis = 50) {
   }
 }
 
+/**
+ * Return full list of promos.
+ * TODO add status
+ *
+ * @return Object
+ *   Array of promo nodes.
+ */
 function kidneys_misc_list_promos() {
   $promos = &drupal_static(__FUNCTION__);
   if(empty($promos)) {
@@ -147,18 +175,27 @@ function kidneys_misc_list_promos() {
 
     $result = $query->execute();
     $promos = $result->fetchAll();
-    //while ($record = $result->fetchAll()) {
-    //  $promos[] = $record;
-    //}
   }
 
   return $promos;
 }
 
+/**
+ * Ajax endpoint for promo content.
+ *
+ * @return
+ *   .
+ */
 function kidneys_misc_promotion_generator() {
+  // Display is really just the Promo node field.
   $display = !empty($_GET['display']) ? $_GET['display'] : '';
+  // Cookie-based tax ids to search.
   $query = !empty($_GET['query']) ? $_GET['query'] : '';
+  $query = drupal_json_decode($query);
+  // Page making the ajax call.
   $calling_q = !empty($_GET['calling_q']) ? $_GET['calling_q'] : '';
+
+  // Node we're looking for.
   $node = NULL;
 
   // See if the current path matches any promos directly.
@@ -172,23 +209,22 @@ function kidneys_misc_promotion_generator() {
     }
   }
 
-  // If we haven't already found our promo...
+  // If we haven't already found our promo based on path look some more.
   if (!$node) {
-    $query = drupal_json_decode($query);
-    $keys = implode(' ', array_keys($query));
-
+    // Priorities geolocation search.
     $geo = kidneys_misc_get_geo_from_ip($_SERVER['REMOTE_ADDR']);
-
     if (!empty($geo['latitude']) && !empty($geo['longitude']) && $event = kidneys_misc_get_proximate_events($geo['latitude'], $geo['longitude'], $display)) {
       $node = node_load($event->nid);
     } else {
+      // Now try fuzzy solr search.
+      // List of tax ids.
+      $keys = implode(' ', array_keys($query));
+      // Add "default" to keys so we can add to title of promos for results.
+      $keys .= ' default';
       $query = search_api_query('default_node_index', array('conjunction'=>'OR'));
-
-      //$query = $index->query();
       $query->condition('type', 'promotion', '=');
       $query->condition('field_promo_' . $display . ':value', NULL, '<>');
       $query->fields(array('title','field_base_category_index'));
-      $keys .= ' default';
       $query->keys($keys);
       $results = $query->execute();
 
@@ -200,6 +236,7 @@ function kidneys_misc_promotion_generator() {
     }
   }
   if ($node) {
+    // Set up element for Google analytics tracking.
     $output = '<div data-id="' . $node->nid . '" data-promo-path="' . $path . '" data-promo-name="' . drupal_strtolower($node->title) . '">';
     $field = field_view_field('node', $node, 'field_promo_' . $display, array('label'=> 'hidden'));
     $field =  render($field);
@@ -216,8 +253,12 @@ function kidneys_misc_promotion_generator() {
 
   return $page;
 }
-// Add node categories to js object.
+
+/**
+ * Implements hook_page_alter().
+ */
 function kidneys_misc_page_alter($page) {
+  // Add setting for ajax requests.
   drupal_add_js(
     array(
       'calling_q' => drupal_strtolower($_GET['q']),
@@ -225,6 +266,7 @@ function kidneys_misc_page_alter($page) {
     'setting'
   );
   $node = menu_get_object();
+  // Add category info for nodes.
   if ($node) {
     $category_index = kidneys_misc_get_first_field_value($node, 'field_base_category_index');
     $categories = explode(' ', trim($category_index));
@@ -239,8 +281,6 @@ function kidneys_misc_page_alter($page) {
       }
     }
     if ($category_index) {
-      //$category_new = str_replace('=', ':', http_build_query($category_new, null, ','));
-
       drupal_add_js(
         array(
           'kidneys_categories' => drupal_json_encode($category_new),
@@ -296,17 +336,18 @@ function kidneys_misc_block_info() {
   return $blocks;
 }
 
+/**
+ * Implements hook_init().
+
+ */
 function kidneys_misc_init() {
   $path = drupal_get_path('module', 'kidneys_misc');
   drupal_add_js($path . '/kidneys_misc.js');
 }
 /**
  * Implements hook_block_view().
- *
- * This hook generates the contents of the blocks themselves.
  */
 function kidneys_misc_block_view($delta = '') {
-  // The $delta parameter tells us which block is being requested.
   $block = array();
   switch ($delta) {
     case 'kidneys_misc_pardot_progressive':
@@ -394,7 +435,8 @@ function kidneys_misc_block_view($delta = '') {
   }
   return $block;
 }
-
+// Block content callback for pardot signup form.
+// TODO update pardot url.
 function kidneys_misc_get_pardot() {
   $path = drupal_get_path('module', 'kidneys_misc');
   drupal_add_js($path . '/kidneys_misc_pardot.js');
@@ -405,19 +447,16 @@ function kidneys_misc_get_pardot() {
   $markup = '<div class="pardot-email">';
   $markup .= '<iframe src="http://www3.kidney.org/l/219342/2016-08-31/77f" width="100%" type="text/html" frameborder="0" allowTransparency="true" style="border: 0"></iframe>';
   $markup .= "</div>";
-
   $markup .= '<div id="pardot-progressive" class="white-popup mfp-hide" style="position:relative;background:white; padding:25px;width:auto;max-width:400px;margin:0 auto">';
-  //$markup .= '<iframe src="http://www3.kidney.org/l/219342/2017-06-02/q74n" width="100%" height="500" type="text/html" frameborder="0" allowTransparency="true" style="border: 0"></iframe>';
   $markup .= "</div>";
   return $markup;
 }
 
 /**
   * hook_search_api_solr_query_alter().
-*/
-
+  */
 function kidneys_misc_search_api_solr_query_alter(array &$call_args, SearchApiQueryInterface $query) {
-  // Check to see if we search is for promos.
+  // Check to see if we search is for promos and if add boost to the query.
   if ($call_args['params']['fq'][0] == 'ss_type:"promotion"') {
     // This request should have come in via ajax.
     // We want to grab appropriate URL params.
@@ -428,10 +467,13 @@ function kidneys_misc_search_api_solr_query_alter(array &$call_args, SearchApiQu
     }
 
   }
-  // Boost exact matches for search boost fields// Boost exact title matched.
+  // Boost exact matches for search boost fields.
+  // This allows us to up the relevance of select nodes useing
+  // the search_boost_term field.
   if (isset($query) && is_object($query) && method_exists($query, 'getKeys')) {
     $keys = $query->getKeys();
   	unset($keys['#conjunction']);
+    // Boost multiple words.
     $len  = count($keys);
     for ($i = 0; $i < $len; $i++){
       $call_args['params']['bq'][] = 'tm_field_search_boost_term:"' . $keys[$i] . '"^10';
