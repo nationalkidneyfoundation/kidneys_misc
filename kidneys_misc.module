@@ -188,7 +188,8 @@ function kidneys_misc_promotion_generator() {
       //$query = $index->query();
       $query->condition('type', 'promotion', '=');
       $query->condition('field_promo_' . $display . ':value', NULL, '<>');
-      $query->fields(array('field_base_category_index'));
+      $query->fields(array('title','field_base_category_index'));
+      $keys[] = 'default';
       $query->keys($keys);
       $results = $query->execute();
 
@@ -424,8 +425,6 @@ function kidneys_misc_search_api_solr_query_alter(array &$call_args, SearchApiQu
     // We want to grab appropriate URL params.
     $query = !empty($_GET['query']) ? $_GET['query'] : '';
     $query = drupal_json_decode($query);
-    $boost = '';
-    $call_args['params']['bq'][] = 'default' . '^1';
     foreach ($query as $k => $v) {
       $call_args['params']['bq'][] = $k . '^' . $v;
     }
