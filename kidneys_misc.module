@@ -425,6 +425,7 @@ function kidneys_misc_search_api_solr_query_alter(array &$call_args, SearchApiQu
     $query = !empty($_GET['query']) ? $_GET['query'] : '';
     $query = drupal_json_decode($query);
     $boost = '';
+    $call_args['params']['bq'][] = 'default' . '^1';
     foreach ($query as $k => $v) {
       $call_args['params']['bq'][] = $k . '^' . $v;
     }
