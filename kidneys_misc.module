@@ -352,7 +352,7 @@ function kidneys_misc_block_view($delta = '') {
   $block = array();
   switch ($delta) {
     case 'kidneys_misc_pardot_progressive':
-      $block['subject'] = '';
+      $block['subject'] = 'Newsletter Sign Up';
       $block['content'] = kidneys_misc_get_pardot();
     break;
     case 'kidneys_misc_content_actions_top':
