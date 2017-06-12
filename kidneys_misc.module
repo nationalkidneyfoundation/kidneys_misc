@@ -113,7 +113,7 @@ function kidneys_misc_get_geo_from_ip($ip) {
  * @return Object
  *   Object with nid and distance.
  */
-function kidneys_misc_get_proximate_events($lat, $lon, $field, $dis = 50, $days = 45) {
+function kidneys_misc_get_proximate_events($lat, $lon, $field, $dis = 100, $days = 45) {
   $results = db_query(
     'SELECT
       n.nid,  (
