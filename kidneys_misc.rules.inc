@@ -118,7 +118,16 @@ function kidneys_misc_rules_action_info() {
       ),
     ),
   );
-
+  $actions['kidneys_misc_set_line_item_type_info_recurring'] = array(
+    'label' => t('Set the correct line item type and info on a recurring gift'),
+    'group' => t('NKF'),
+    'parameter' => array(
+      'line_item' => array(
+        'type' => 'commerce_line_item',
+        'label' => t('Line Item'),
+      )
+    ),
+  );
   return $actions;
 }
 
@@ -144,6 +153,32 @@ function kidneys_misc_rules_condition_info() {
   return $conditions;
 }
 
+function kidneys_misc_set_line_item_type_info_recurring($line_item) {
+  if (!empty($line_item->data && !empty($line_item->data['recurring_entity']))) {
+    // Load recurring entity
+    $recurring_entity = commerce_recurring_load($line_item->data['recurring_entity']);
+    // Load original order from recurring
+    if (!empty($recurring_entity->commerce_recurring_order[LANGUAGE_NONE])) {
+      $order_id = $recurring_entity->commerce_recurring_order[LANGUAGE_NONE][0]['target_id'];
+      $order = commerce_order_load($order_id);
+      // Load line item from order
+      $line_item_id = $order->commerce_line_items[LANGUAGE_NONE][0]['line_item_id'];
+      $original_line_item = commerce_line_item_load($line_item_id);
+      // Set correct line itme type
+      $line_item->type = $original_line_item->type;
+      // Set all fields on line item.
+      $original_line_item = (array) $original_line_item;
+      foreach ($original_line_item as $key => $value) {
+        if (strrpos($key, 'field_') !== FALSE) {
+          $line_item->{$key} = $value;
+        }
+      }
+      if (isset($line_item->field_sf_status)) {
+        $line_item->field_sf_status[LANGUAGE_NONE][0]['value'] = 'new';
+      }
+    }
+  }
+}
 
 function kidneys_misc_get_category_tid_values_rules($node) {
   $values = kidneys_misc_get_category_tid_values($node);
@@ -170,6 +205,9 @@ function kidneys_misc_rules_action_fetch_by_mail($mail) {
 function kidneys_misc_dontion_gl_code($office_id, $gift_type = NULL) {
   $one = '10';
   $two = $office_id;
+  if (empty($two)) {
+     $two = '920';
+  }
   // Affiliates.
   if ($office_id >= 700 && $office_id < 800) {
     $three = '0000';

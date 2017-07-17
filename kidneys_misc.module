@@ -113,7 +113,7 @@ function kidneys_misc_get_geo_from_ip($ip) {
  * @return Object
  *   Object with nid and distance.
  */
-function kidneys_misc_get_proximate_events($lat, $lon, $field, $dis = 100, $days = 45) {
+function kidneys_misc_get_proximate_promo_events($lat, $lon, $field, $dis = 50, $days = 45) {
   $results = db_query(
     'SELECT
       n.nid,  (
@@ -213,7 +213,7 @@ function kidneys_misc_promotion_generator() {
   if (!$node) {
     // Priorities geolocation search.
     $geo = kidneys_misc_get_geo_from_ip($_SERVER['REMOTE_ADDR']);
-    if (!empty($geo['latitude']) && !empty($geo['longitude']) && $event = kidneys_misc_get_proximate_events($geo['latitude'], $geo['longitude'], $display)) {
+    if (!empty($geo['latitude']) && !empty($geo['longitude']) && $event = kidneys_misc_get_proximate_promo_events($geo['latitude'], $geo['longitude'], $display)) {
       $node = node_load($event->nid);
     } else {
       // Now try fuzzy solr search.
@@ -315,6 +315,12 @@ function kidneys_misc_block_info() {
   $blocks['kidneys_misc_pardot_progressive'] = array(
     'info' => t('Pardot Progressive Modal Form'),
   );
+  $blocks['kidneys_misc_proximate_events'] = array(
+    'info' => t('Nearby Events'),
+  );
+  $blocks['kidneys_misc_proximate_office'] = array(
+    'info' => t('Closest Office'),
+  );
   $blocks['kidneys_misc_promo_block'] = array(
     'info' => t('NKF Promo - Block'),
   );
@@ -354,6 +360,14 @@ function kidneys_misc_block_view($delta = '') {
     case 'kidneys_misc_pardot_progressive':
       $block['subject'] = 'Newsletter Sign Up';
       $block['content'] = kidneys_misc_get_pardot();
+    break;
+    case 'kidneys_misc_proximate_events':
+      $block['subject'] = 'Nearby Events';
+      $block['content'] = kidneys_misc_proximate_events();
+    break;
+    case 'kidneys_misc_proximate_office':
+      $block['subject'] = 'Closest Office';
+      $block['content'] = kidneys_misc_proximate_office();
     break;
     case 'kidneys_misc_content_actions_top':
       $block['subject'] = '';
@@ -451,6 +465,45 @@ function kidneys_misc_get_pardot() {
   $markup .= '<div id="pardot-progressive" class="white-popup mfp-hide" style="position:relative;background:white; padding:25px;width:auto;max-width:400px;margin:0 auto">';
   $markup .= "</div>";
   return $markup;
+}
+
+// Block content callback for closest events.
+function kidneys_misc_proximate_events() {
+  $geo = kidneys_misc_get_geo_from_ip($_SERVER['REMOTE_ADDR']);
+  if (!empty($geo['latitude']) && !empty($geo['longitude']) && $event = kidneys_misc_get_proximate_events($geo['latitude'], $geo['longitude'], $display)) {
+    $node = node_load($event->nid);
+  }
+}
+
+function kidneys_misc_get_proximate_events($lat, $lon, $field, $dis = 50, $days = 45) {
+  $results = db_query(
+    'SELECT
+      n.nid,  (
+        3959 * acos (
+          cos ( radians(:lat) )
+          * cos( radians( g.field_base_geofield_lat ) )
+          * cos( radians( g.field_base_geofield_lon ) - radians(:lon) )
+          + sin ( radians(:lat) )
+          * sin( radians( g.field_base_geofield_lat ) )
+        )
+      ) AS distance
+    FROM {node} n
+      INNER JOIN {field_data_field_base_geofield} g on g.entity_id = n.nid
+      INNER JOIN {field_data_field_base_date_time} d on d.entity_id = n.nid
+
+    WHERE
+      n.type = :type
+      AND d.field_base_date_time_value >= NOW()
+      AND d.field_base_date_time_value <= DATE_ADD(CURRENT_TIMESTAMP, INTERVAL :days day)
+    HAVING distance <= :dis
+    ORDER BY distance
+    LIMIT 0 , 5', array(':type'=> 'event', ':lat' => $lat, ':lon' => $lon, ':dis' => $dis, ':days' => $days )
+  );
+  if ($results->rowCount() > 0) {
+    return $results->fetchObject();
+  } else {
+    return FALSE;
+  }
 }
 
 /**
