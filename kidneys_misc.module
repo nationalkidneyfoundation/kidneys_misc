@@ -401,7 +401,7 @@ function kidneys_misc_block_view($delta = '') {
 
       $block['subject'] = '';
       $block['content'] = '<div id="promotion--band" data-promo="band" class="promotion">
-        <div class="bg--gray-1 animate--shimmer padding--md width--100"></div>
+        <div class="animate--shimmer padding--md width--100"></div>
       </div>';
     break;
     case 'kidneys_misc_promo_hero':
