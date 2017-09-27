@@ -683,7 +683,7 @@ function kidneys_misc_get_content_actions_top_markup() {
   if (!empty($actions)) {
     $markup = '<div class="sm--display--inline-block padding-y--md grid print--hide sm--font-size--sm">';
     foreach ($actions as $key => $value) {
-      $markup .= '<div class="grid-cell padding-right--xs">';
+      $markup .= '<div class="grid-cell padding-right--xs padding-bottom--xs">';
       $markup .= $value['markup'];
       $markup .= '</div>';
     }
