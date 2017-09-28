@@ -350,6 +350,13 @@ function kidneys_misc_init() {
   drupal_add_library('system', 'jquery.cookie');
   $path = drupal_get_path('module', 'kidneys_misc');
   drupal_add_js($path . '/kidneys_misc.js');
+
+  $magnificpath = libraries_get_path('magnific_popup');
+  if ($magnificpath) {
+    drupal_add_js($magnificpath . '/dist/jquery.magnific-popup.js');
+    drupal_add_css($magnificpath . '/dist/magnific-popup.css');
+  }
+
 }
 /**
  * Implements hook_block_view().
