@@ -1,5 +1,29 @@
 <?php
 
+function kidneys_misc_views_pre_render ( &$view ) {
+  // Add Adroll advanced tracking values if we are on the donation receipt page.
+  if (arg(0) == 'donation-receipt'
+      && variable_get('nkf_adroll_endabled', 0)
+      && $view->name == 'donation_receipt_v2'
+      && !empty($view->result[0])
+      && !empty($view->result[0]->_field_data['donation_id'])) {
+    $result = $view->result[0];
+    $donation = $result->_field_data['donation_id']['entity'];
+    $order_id = $donation->order_id;
+    $wrapper = entity_metadata_wrapper('commerce_order', $order_id);
+    $order_total = $wrapper->commerce_order_total->value();
+    $amount = commerce_currency_amount_to_decimal($order_total['amount'], $order_total['currency_code']);
+    $currency = commerce_currency_load($order_total['currency_code']);
+    $order_total = number_format(commerce_currency_round($amount, $currency), $currency['decimals'], $currency['decimal_separator'],$currency['thousands_separator']);
+    drupal_add_js('adroll_conversion_value = ' . $order_total . ';adroll_currency = "' . $currency['code'] . '";', array(
+      'type' => 'inline',
+      'scope' => 'footer',
+      'weight' => 5,
+    ));
+  }
+}
+
+
 /**
  * Merge values from contacts into master contact and handle related entities.
  *
@@ -76,7 +100,39 @@ function kidneys_misc_menu() {
     'delivery callback' => 'ajax_deliver',
     'type' => MENU_CALLBACK,
   );
+  $items['admin/config/services/adroll'] = array(
+    'title' => 'Adroll configuration',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('kidneys_misc_adroll_admin_form'),
+    'access arguments' => array('administer users'),
+    'type' => MENU_NORMAL_ITEM,
+  );
   return $items;
+}
+
+function kidneys_misc_adroll_admin_form($form, &$form_state) {
+
+  $form['nkf_adroll_endabled'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable Adroll Tracking'),
+    '#default_value' => variable_get('nkf_adroll_endabled', 0)
+  );
+
+  $form['nkf_adroll_adv_id'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Adroll Adv ID'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('nkf_adroll_adv_id', '')
+  );
+
+  $form['nkf_adroll_pix_id'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Adroll Pix ID'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('nkf_adroll_pix_id', '')
+  );
+
+  return system_settings_form($form);
 }
 
 /**
@@ -290,6 +346,28 @@ function kidneys_misc_page_alter($page) {
       );
     }
   }
+
+  // add Adroll tracking pixel.
+  if (variable_get('nkf_adroll_endabled', 0)) {
+    kidneys_misc_add_adroll_pixel();
+  }
+}
+
+function kidneys_misc_add_adroll_pixel() {
+  $adv_id = variable_get('nkf_adroll_adv_id', 'TEST');
+  $pix_id = variable_get('nkf_adroll_pix_id', 'TEST');
+  $path = drupal_get_path('module', 'kidneys_misc');
+  drupal_add_js('adroll_adv_id = "' . $adv_id . '";adroll_pix_id = "' . $pix_id . '";', array(
+    'type' => 'inline',
+    'scope' => 'footer',
+    'weight' => 5,
+  ));
+  drupal_add_js($path . '/kidneys_misc_adroll.js', array(
+    'type' => 'file',
+    'scope' => 'footer',
+    'weight' => 6,
+  ));
+
 }
 
 function kidneys_misc_get_category_tid_values($node) {
@@ -346,18 +424,18 @@ function kidneys_misc_block_info() {
  * Implements hook_init().
 
  */
-function kidneys_misc_init() {
-  drupal_add_library('system', 'jquery.cookie');
-  $path = drupal_get_path('module', 'kidneys_misc');
-  drupal_add_js($path . '/kidneys_misc.js');
+ function kidneys_misc_init() {
+   drupal_add_library('system', 'jquery.cookie');
+   $path = drupal_get_path('module', 'kidneys_misc');
+   drupal_add_js($path . '/kidneys_misc.js');
 
-  $magnificpath = libraries_get_path('magnific_popup');
-  if ($magnificpath) {
-    drupal_add_js($magnificpath . '/dist/jquery.magnific-popup.js');
-    drupal_add_css($magnificpath . '/dist/magnific-popup.css');
-  }
+   $magnificpath = libraries_get_path('magnific_popup');
+   if ($magnificpath) {
+     drupal_add_js($magnificpath . '/dist/jquery.magnific-popup.js');
+     drupal_add_css($magnificpath . '/dist/magnific-popup.css');
+   }
 
-}
+ }
 /**
  * Implements hook_block_view().
  */
