@@ -81,7 +81,6 @@
         });
       },
       init: function() {
-        console.log('initing');
         if (o.nav.length > 0) {
           o.nav_top = o.nav.offset().top;
           $(window).scroll(o.onScroll);
