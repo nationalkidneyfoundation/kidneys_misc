@@ -107,7 +107,42 @@ function kidneys_misc_menu() {
     'access arguments' => array('administer users'),
     'type' => MENU_NORMAL_ITEM,
   );
+
+  $items['nkf-download/file/fid/%file'] = array(
+    'title' => 'Download file',
+    'page callback' => 'nkf_misc_download_file_direct_download',
+    'page arguments' => array(3),
+    'access arguments' => array('access content'),
+  );
   return $items;
+}
+
+/**
+ * .
+ *
+ * @param stdClass $file
+ * @return int|null
+ */
+function nkf_misc_download_file_direct_download(stdClass $file) {
+  $headers = file_download_headers($file->uri);
+
+  if (!$headers) {
+    return MENU_ACCESS_DENIED;
+  }
+
+  $default_headers = array(
+    'Content-Type' => 'force-download',
+    'Content-Disposition' => 'attachment; filename="' . $file->filename . '"',
+    'Content-Length' => $file->filesize,
+    'Content-Transfer-Encoding' => 'binary',
+    'Pragma' => 'no-cache',
+    'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+    'Expires' => '0',
+    'Accept-Ranges' => 'bytes'
+  );
+
+  $headers = array_merge($default_headers, $headers);
+  file_transfer($file->uri, $headers);
 }
 
 function kidneys_misc_adroll_admin_form($form, &$form_state) {
