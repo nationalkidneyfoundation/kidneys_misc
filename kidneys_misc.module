@@ -179,6 +179,8 @@ function kidneys_misc_adroll_admin_form($form, &$form_state) {
  *   Object with lon and lat.
  */
 function kidneys_misc_get_geo_from_ip($ip) {
+  // Turn this off for now.
+  return FALSE;
   $data = &drupal_static(__FUNCTION__ . $ip, FALSE);
   if(empty($data)) {
     $url = 'https://freegeoip.net/json/'. $ip;
