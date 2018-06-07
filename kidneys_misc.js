@@ -128,6 +128,11 @@
           } catch (e) {}
         });
       });
+      // utility for watertree modal selection.
+      $('.modal-watertree').magnificPopup({
+        type:'inline',
+        midClick: true,1
+      });
     }
   }
 
