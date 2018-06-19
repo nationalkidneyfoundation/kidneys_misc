@@ -1,5 +1,109 @@
 <?php
 
+/**
+ * Implements hook_form_alter
+ */
+function kidneys_misc_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'iga_entityform_edit_form') {
+    //dpm($form);
+    $form['actions']['#prefix'] = '<div class="">';
+    $form['actions']['#suffix'] = '</div>';
+
+    // Address hacking.
+    $form['field_base_address'][LANGUAGE_NONE][0]['#type'] = 'container';
+    $form['field_base_address'][LANGUAGE_NONE][0]['#attributes']['class'][] = 'grid';
+    $form['field_base_address'][LANGUAGE_NONE][0]['country']['#access'] = FALSE;
+    $form['field_base_address'][LANGUAGE_NONE][0]['street_block']['thoroughfare']['#prefix'] = '<div class="grid-cell width--100">';
+    $form['field_base_address'][LANGUAGE_NONE][0]['street_block']['thoroughfare']['#suffix'] = '</div>';
+    $form['field_base_address'][LANGUAGE_NONE][0]['locality_block']['locality']['#prefix'] = '<div class="grid-cell width--100 sm--width--55 sm--padding-right--xxs">';
+    $form['field_base_address'][LANGUAGE_NONE][0]['locality_block']['locality']['#suffix'] = '</div>';
+    $form['field_base_address'][LANGUAGE_NONE][0]['locality_block']['administrative_area']['#prefix'] = '<div class="grid-cell width--50 sm--width--20 padding-right--xxs">';
+    $form['field_base_address'][LANGUAGE_NONE][0]['locality_block']['administrative_area']['#suffix'] = '</div>';
+    $form['field_base_address'][LANGUAGE_NONE][0]['locality_block']['postal_code']['#prefix'] = '<div class="grid-cell width--50 sm--width--25">';
+    $form['field_base_address'][LANGUAGE_NONE][0]['locality_block']['postal_code']['#suffix'] = '</div>';
+
+    // Name hacking.
+    $form['name'] = array(
+      '#type' => 'container',
+      '#attributes' => array('class' => array('grid')),
+      '#weight' => $form['field_base_first_name']['#weight']
+    );
+    $form['field_base_first_name']['#attributes']['class'][] = 'grid-cell width--100 sm--width--50 sm--padding-right--xxs';
+    $form['field_base_last_name']['#attributes']['class'][] = 'grid-cell width--100 sm--width--50 sm--padding-left--xxs';
+    $form['name']['field_base_first_name'] = $form['field_base_first_name'];
+    $form['name']['field_base_last_name'] = $form['field_base_last_name'];
+    unset($form['field_base_first_name']);
+    unset($form['field_base_last_name']);
+
+    // Phone/email hacking.
+    $form['email_phone'] = array(
+      '#type' => 'container',
+      '#attributes' => array('class' => array('grid')),
+      '#weight' => $form['field_base_email']['#weight']
+    );
+    $form['field_base_email']['#attributes']['class'][] = 'grid-cell width--100 sm--width--50 padding-right--xxs';
+    $form['field_phone']['#attributes']['class'][] = 'grid-cell width--100 sm--width--50 sm--padding-left--xxs';
+    $form['email_phone']['field_base_email'] = $form['field_base_email'];
+    $form['email_phone']['field_phone'] = $form['field_phone'];
+    unset($form['field_base_email']);
+    unset($form['field_phone']);
+
+    $form['#group_children']['name'] = $form['#group_children']['field_base_first_name'];
+    $form['#group_children']['email_phone'] = $form['#group_children']['field_base_email'];
+
+    $form['actions']['submit']['#attributes']['class'][] = 'width--100 button--yellow caps bold';
+    $form['actions']['#prefix'] = '<div class="sm--hide">';
+    $form['actions']['#suffic'] = '</div>';
+
+    $form['#prefix'] = '<div class="center width--100">';
+    $form['#prefix'] .= '<div class="sm--padding-x--xxl padding-x--md padding-top--md bg--white border-width--none border-top-width--xl border-color--gray-4 border-style--solid">';
+    $form['#suffix'] = '</div></div>';
+  }
+}
+
+/*
+ * Implements hook_entityform_insert
+ */
+function kidneys_misc_entityform_insert($entityform) {
+  //dpm($entityform);
+  // Get values from submission.
+  $age = $entityform->field_iga_18[LANGUAGE_NONE][0]['value'];
+  $cancer = $entityform->field_iga_cancer[LANGUAGE_NONE][0]['value'];
+  $transplant = $entityform->field_iga_transplant[LANGUAGE_NONE][0]['value'];
+  $diagnosis = $entityform->field_iga_diagnosis[LANGUAGE_NONE][0]['value'];
+  $end_stage = $entityform->field_iga_end_stage[LANGUAGE_NONE][0]['value'];
+  $biopsy = $entityform->field_iga_biopsy[LANGUAGE_NONE][0]['value'];
+
+  $city = $entityform->field_base_address[LANGUAGE_NONE][0]['locality'];
+  $state = $entityform->field_base_address[LANGUAGE_NONE][0]['administrative_area'];
+  $zip = $entityform->field_base_address[LANGUAGE_NONE][0]['postal_code'];
+  $address = $city . ' ' . $state . ' ' . $zip;
+
+  if ($age && $diagnosis && $biopsy && !$cancer && !$transplant && !$end_stage) {
+    // Find a lat and lon
+    $point = geocoder('google', $address);
+    if (!empty($point)) {
+      $lon = $point->coords[0];
+      $lat = $point->coords[1];
+      $arg = $lat . ',' . $lon;
+      // Use view to look up location, this makes it easy to adjust in UI.
+      $result = views_get_view_result('clinical_trials_locator', 'default', $arg);
+      if (!empty($result)) {
+        // If we have a location, save it to the submission for future reference.
+        // Maybe we should be doing this in presave as opposed to insert?
+        $location = $result[0]->nid;
+        $submission = entity_load_single('entityform', $entityform->entityform_id);
+        $submission_wrapper = entity_metadata_wrapper('entityform', $submission);
+        $submission_wrapper->field_iga_closest_center->set($location);
+        $submission_wrapper->save();
+      }
+    }
+  }
+
+  drupal_goto('iga-trial/results/' . $entityform->entityform_id);
+
+}
+
 function kidneys_misc_views_pre_render ( &$view ) {
   // Add Adroll advanced tracking values if we are on the donation receipt page.
   if (arg(0) == 'donation-receipt'
