@@ -128,9 +128,30 @@ function kidneys_misc_rules_action_info() {
       )
     ),
   );
+  $actions['kidneys_misc_set_recurring_entity_due_date'] = array(
+    'label' => t('Set recurring entity due date to next interval'),
+    'group' => t('Commerce recurring'),
+    'parameter' => array(
+      'commerce_recurring' => array(
+        'type' => 'commerce_recurring',
+        'label' => t('Commerce recurring'),
+      ),
+    ),
+  );
   return $actions;
 }
-
+/**
+ * Set the recurring entity due date to next interval.
+ */
+ function kidneys_misc_set_recurring_entity_due_date($recurring_entity) {
+   $interval = kidneys_misc_get_recurring_interval($recurring_entity);
+   if (!empty($interval)) {
+      $date = new DateObject($recurring_entity->due_date);
+      interval_apply_interval($date, $interval, TRUE);
+      $recurring_entity->due_date = $date->getTimestamp();
+      entity_save('commerce_recurring', $recurring_entity);
+    }
+ }
 /**
  * Implements hook_rules_condition_info().
  */
