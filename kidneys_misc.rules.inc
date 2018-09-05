@@ -128,9 +128,30 @@ function kidneys_misc_rules_action_info() {
       )
     ),
   );
+  $actions['kidneys_misc_set_recurring_entity_due_date'] = array(
+    'label' => t('Set recurring entity due date to next interval'),
+    'group' => t('Commerce recurring'),
+    'parameter' => array(
+      'commerce_recurring' => array(
+        'type' => 'commerce_recurring',
+        'label' => t('Commerce recurring'),
+      ),
+    ),
+  );
   return $actions;
 }
-
+/**
+ * Set the recurring entity due date to next interval.
+ */
+ function kidneys_misc_set_recurring_entity_due_date($recurring_entity) {
+   $interval = kidneys_misc_get_recurring_interval($recurring_entity);
+   if (!empty($interval)) {
+      $date = new DateObject($recurring_entity->due_date);
+      interval_apply_interval($date, $interval, TRUE);
+      $recurring_entity->due_date = $date->getTimestamp();
+      entity_save('commerce_recurring', $recurring_entity);
+    }
+ }
 /**
  * Implements hook_rules_condition_info().
  */
@@ -149,9 +170,100 @@ function kidneys_misc_rules_condition_info() {
       ),
     ),
   );
-
+  $conditions['kidneys_misc_check_for_existing_pending_orders'] = array(
+    'label' => t('Recurring entity has no pending recurring orders'),
+    'parameter' => array(
+      'commerce_recurring' => array(
+        'type' => 'commerce_recurring',
+        'label' => t('Commerce recurring'),
+      ),
+    ),
+    'group' => t('Commerce recurring'),
+  );
+  $conditions['kidneys_misc_check_for_recently_charged_recurring_orders'] = array(
+    'label' => t('Recurring entity has no recently charged recurring order'),
+    'parameter' => array(
+      'commerce_recurring' => array(
+        'type' => 'commerce_recurring',
+        'label' => t('Commerce recurring'),
+      ),
+    ),
+    'group' => t('Commerce recurring'),
+  );
   return $conditions;
 }
+
+/*
+ * See if the recurring order has any exising orders with a status of "pending recurring"
+ * and if so return FALSE.
+ */
+function kidneys_misc_check_for_existing_pending_orders($recurring_entity) {
+  $items = field_get_items('commerce_recurring', $recurring_entity, 'commerce_recurring_order');
+  $order_ids = array();
+  foreach ($items as $value) {
+    $order_ids[] = $value['target_id'];
+  }
+
+  $orders = commerce_order_load_multiple($order_ids);
+
+  foreach ($orders as $order) {
+    if ($order->status == 'recurring_pending') {
+      watchdog('kidney_misc_recurring_fail', 'Recurring entity has pending recurring order: ' . $order->order_id);
+      return false;
+    }
+  }
+  return true;
+}
+
+/*
+ * See if the recurring order has any exising orders with a status of "pending recurring"
+ * and if so return FALSE.
+ */
+function kidneys_misc_check_for_recently_charged_recurring_orders($recurring_entity) {
+  $items = field_get_items('commerce_recurring', $recurring_entity, 'commerce_recurring_order');
+  $order_ids = array();
+  foreach ($items as $value) {
+    $order_ids[] = $value['target_id'];
+  }
+
+  $interval = kidneys_misc_get_recurring_interval($recurring_entity);
+  // Flip the direction of the interval so we can look back in time (wooooo).
+  $interval['interval'] = $interval['interval'] * -1;
+  // If we don'thave an interval then something is wrong and we shouldn't proceed.
+  if (!$interval) {
+    return false;
+  }
+  $date = new DateObject();
+  interval_apply_interval($date, $interval, TRUE);
+
+  $orders = commerce_order_load_multiple($order_ids);
+
+  foreach ($orders as $order) {
+    // TODO: Should this really only look for charged cards? What about processing, etc.?
+    if ($order->status == 'cardonfile_charged' && $order->changed >= $date->getTimestamp()) {
+      watchdog('kidney_misc_recurring_fail', 'Recurring entity has recently charged order: ' . $order->order_id);
+      return false;
+    }
+  }
+  return true;
+}
+
+function kidneys_misc_get_recurring_interval($recurring_entity) {
+  // Get the product out of the recurring entity.
+  $recurring_wrapper = entity_metadata_wrapper('commerce_recurring', $recurring_entity);
+  $product_wrapper = $recurring_wrapper->commerce_recurring_ref_product;
+
+  $product = $product_wrapper->value();
+  if (!empty($product->commerce_recurring_rec_period)) {
+    $recurring_interval = $product_wrapper->commerce_recurring_rec_period->value();
+    if (!empty($recurring_interval)) {
+      return $recurring_interval;
+    } else {
+      return FALSE;
+    }
+  }
+}
+
 
 function kidneys_misc_set_line_item_type_info_recurring($line_item) {
   if (!empty($line_item->data && !empty($line_item->data['recurring_entity']))) {
