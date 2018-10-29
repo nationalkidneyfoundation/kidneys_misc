@@ -865,7 +865,9 @@ function kidneys_misc_get_tweet_intent($node) {
   $url = kidneys_misc_get_first_field_value($node, 'field_url_hash');
   $tweet = 'https://twitter.com/intent/tweet';
   $query['text'] = ($text) ? $text : $node->title;
-  if ($url) {
+  // Url hash is broken, TODO: fix it.
+  // This is just a work around to force the nid for twitter.
+  if ($url && FALSE) {
     $query['url'] = 'http://nkf.li/' . $url;
   } else {
     $base_path = url(base_path(), ['absolute' => TRUE]);
