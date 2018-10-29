@@ -871,7 +871,7 @@ function kidneys_misc_get_tweet_intent($node) {
     $query['url'] = 'http://nkf.li/' . $url;
   } else {
     $base_path = url(base_path(), ['absolute' => TRUE]);
-    $path = $base_path . '/' . drupal_get_path_alias('node/' . $node->nid);
+    $path = $base_path .  drupal_get_path_alias('node/' . $node->nid);
     $query['url'] = $path;
   }
   if ($via) {
