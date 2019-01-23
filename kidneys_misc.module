@@ -65,7 +65,6 @@ function kidneys_misc_form_alter(&$form, &$form_state, $form_id) {
  * Implements hook_entityform_insert
  */
 function kidneys_misc_entityform_insert($entityform) {
-  watchdog('kidney_misc', 'ef: <pre>' . print_r($entityform,1). '</pre>');
   if ($entityform->type == 'iga') {
 
     // Get values from submission.
