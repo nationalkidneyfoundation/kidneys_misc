@@ -65,42 +65,44 @@ function kidneys_misc_form_alter(&$form, &$form_state, $form_id) {
  * Implements hook_entityform_insert
  */
 function kidneys_misc_entityform_insert($entityform) {
-  //dpm($entityform);
-  // Get values from submission.
-  $age = $entityform->field_iga_18[LANGUAGE_NONE][0]['value'];
-  $cancer = $entityform->field_iga_cancer[LANGUAGE_NONE][0]['value'];
-  $transplant = $entityform->field_iga_transplant[LANGUAGE_NONE][0]['value'];
-  $diagnosis = $entityform->field_iga_diagnosis[LANGUAGE_NONE][0]['value'];
-  $end_stage = $entityform->field_iga_end_stage[LANGUAGE_NONE][0]['value'];
-  $biopsy = $entityform->field_iga_biopsy[LANGUAGE_NONE][0]['value'];
+  if ($entityform->type == 'iga') {
 
-  $city = $entityform->field_base_address[LANGUAGE_NONE][0]['locality'];
-  $state = $entityform->field_base_address[LANGUAGE_NONE][0]['administrative_area'];
-  $zip = $entityform->field_base_address[LANGUAGE_NONE][0]['postal_code'];
-  $address = $city . ' ' . $state . ' ' . $zip;
+    // Get values from submission.
+    $age = $entityform->field_iga_18[LANGUAGE_NONE][0]['value'];
+    $cancer = $entityform->field_iga_cancer[LANGUAGE_NONE][0]['value'];
+    $transplant = $entityform->field_iga_transplant[LANGUAGE_NONE][0]['value'];
+    $diagnosis = $entityform->field_iga_diagnosis[LANGUAGE_NONE][0]['value'];
+    $end_stage = $entityform->field_iga_end_stage[LANGUAGE_NONE][0]['value'];
+    $biopsy = $entityform->field_iga_biopsy[LANGUAGE_NONE][0]['value'];
 
-  if ($age && $diagnosis && $biopsy && !$cancer && !$transplant && !$end_stage) {
-    // Find a lat and lon
-    $point = geocoder('google', $address);
-    if (!empty($point)) {
-      $lon = $point->coords[0];
-      $lat = $point->coords[1];
-      $arg = $lat . ',' . $lon;
-      // Use view to look up location, this makes it easy to adjust in UI.
-      $result = views_get_view_result('clinical_trials_locator', 'default', $arg);
-      if (!empty($result)) {
-        // If we have a location, save it to the submission for future reference.
-        // Maybe we should be doing this in presave as opposed to insert?
-        $location = $result[0]->nid;
-        $submission = entity_load_single('entityform', $entityform->entityform_id);
-        $submission_wrapper = entity_metadata_wrapper('entityform', $submission);
-        $submission_wrapper->field_iga_closest_center->set($location);
-        $submission_wrapper->save();
+    $city = $entityform->field_base_address[LANGUAGE_NONE][0]['locality'];
+    $state = $entityform->field_base_address[LANGUAGE_NONE][0]['administrative_area'];
+    $zip = $entityform->field_base_address[LANGUAGE_NONE][0]['postal_code'];
+    $address = $city . ' ' . $state . ' ' . $zip;
+
+    if ($age && $diagnosis && $biopsy && !$cancer && !$transplant && !$end_stage) {
+      // Find a lat and lon
+      $point = geocoder('google', $address);
+      if (!empty($point)) {
+        $lon = $point->coords[0];
+        $lat = $point->coords[1];
+        $arg = $lat . ',' . $lon;
+        // Use view to look up location, this makes it easy to adjust in UI.
+        $result = views_get_view_result('clinical_trials_locator', 'default', $arg);
+        if (!empty($result)) {
+          // If we have a location, save it to the submission for future reference.
+          // Maybe we should be doing this in presave as opposed to insert?
+          $location = $result[0]->nid;
+          $submission = entity_load_single('entityform', $entityform->entityform_id);
+          $submission_wrapper = entity_metadata_wrapper('entityform', $submission);
+          $submission_wrapper->field_iga_closest_center->set($location);
+          $submission_wrapper->save();
+        }
       }
     }
-  }
 
-  drupal_goto('iga-trial/results/' . $entityform->entityform_id);
+    drupal_goto('iga-trial/results/' . $entityform->entityform_id);
+  }
 
 }
 
