@@ -453,10 +453,225 @@ function kidneys_misc_promotion_generator() {
   return $page;
 }
 
+function kidney_misc_get_pardot_form($fields = NULL, $submit_text = NULL) {
+  static $i = 0;
+  $form_id = 'kidneys_misc_pardot_form' . $i;// . user_password();
+  $i++;
+  $form = drupal_get_form($form_id, $fields, $submit_text);
+  return $form;
+}
+
+function kidneys_misc_pardot_form($form, &$form_state, $fields = NULL, $submit_text = NULL) {
+  $id = user_password();
+  $form = array();
+  $css_hack = empty($fields) ? 'search-form' : '';
+  $form['container'] = array(
+    '#type' => 'container',
+    '#attributes' => array(
+      'class' => array(
+        'pardot-form',
+        $css_hack
+      ),
+      //'id' => 'pardot-form-' . $id
+    ),
+    '#prefix' => '<div id="pardot-form-'.$id.'">',
+    '#suffix' => '</div>'
+  );
+  if(in_array('name', $fields)) {
+    $form['container']['first_name'] = array(
+      '#type' => 'textfield',
+      //'#required' => TRUE,
+      '#title' => t('First name'),
+      '#title_display' => 'invisible',
+      '#attributes' => array(
+        'placeholder' => t('First name')
+      ),
+    );
+
+    $form['container']['last_name'] = array(
+      '#type' => 'textfield',
+      //'#required' => TRUE,
+      '#title' => t('Last name'),
+      '#title_display' => 'invisible',
+      '#attributes' => array(
+        'placeholder' => t('Last name')
+      ),
+    );
+  }
+
+  $form['container']['email'] = array(
+    '#type' => 'textfield',
+    //'#required' => TRUE,
+    '#title' => t('Email'),
+    '#title_display' => 'invisible',
+    '#attributes' => array(
+      'placeholder' => !empty($fields) ? t('Email') : t('Enter your email'),
+      'type' => 'email',
+      //'onkeypress' => 'if(event.keyCode==13){this.form.submit();}'
+    ),
+  );
+  if(in_array('phone', $fields))  {
+    $form['container']['phone'] = array(
+      '#type' => 'textfield',
+      //'#required' => TRUE,
+      '#title' => t('Phone'),
+      '#title_display' => 'invisible',
+      '#attributes' => array(
+        'placeholder' => t('Phone'),
+        'type' => 'tel'
+      ),
+    );
+  }
+  if(in_array('zip', $fields)) {
+    $form['container']['zip'] = array(
+      '#type' => 'textfield',
+      //'#required' => TRUE,
+      '#title' => t('Zipcode'),
+      '#title_display' => 'invisible',
+      '#attributes' => array(
+        'placeholder' => t('Zipcode'),
+      ),
+    );
+  }
+  if(in_array('company', $fields)) {
+    $form['container']['company'] = array(
+      '#type' => 'textfield',
+      //'#required' => TRUE,
+      '#title' => t('Company'),
+      '#title_display' => 'invisible',
+      '#attributes' => array(
+        'placeholder' => t('Company'),
+      ),
+    );
+  }
+  if(in_array('connection', $fields))  {
+    $form['container']['Primary_Connection_to_Kidney_Disease'] = array(
+      '#type' => 'select',
+      //'#required' => TRUE,
+      '#title' => t('Connection to kidney disease'),
+      '#title_display' => 'invisible',
+      '#default_value' => (isset($form_state['values']['Primary_Connection_to_Kidney_Disease'])) ? $form_state['values']['Primary_Connection_to_Kidney_Disease'] : ' ',
+      '#options' => array(
+        '' => '-- Connection to kidney disease --',
+        'I am a kidney patient' => 'I am a kidney patient',
+        'I am a family/friend of a kidney patient' => 'I am a family/friend of a kidney patient',
+        'I am a healthcare professional' => 'I am a healthcare professional',
+        'I am a living donor' => 'I am a living donor',
+        'Other' => 'Other'
+      ),
+      '#attributes' => array(
+        'placeholder' => t('Connection to kidney disease'),
+      ),
+    );
+  }
+
+  $form['container']['submit'] = array(
+   '#type' => 'submit',
+   '#value' => !empty($submit_text) ? t($submit_text) : t('Sign Up'),
+   '#ajax' => array(
+     'callback' => 'kidneys_misc_pardot_form_ajax',
+     'wrapper' => 'pardot-form-' . $id,
+     'method' => 'replace',
+     'effect' => 'fade',
+   ),
+  );
+  if(count($fields)>1) {
+    $form['container']['submit']['#prefix'] = '<div class="margin-top--sm">';
+    $form['container']['submit']['#suffix'] = '</div>';
+  }
+  $form['pardot_iframe'] = array(
+    '#markup' => ''
+  );
+  $form['confirmation'] = array(
+    '#markup' => ''
+  );
+  return $form;
+}
+function kidneys_misc_pardot_form_ajax(&$form, &$form_state) {
+  return $form;
+  /*drupal_validate_form('kidneys_misc_pardot_form', $form, $form_state);
+  if (form_get_errors()) {
+    return $form;
+  } else {
+    // Get params from form.
+    $params = $form_state['values'];
+    // Unset stuff Pardot doesn't need.
+    unset($params['submit']);
+    unset($params['form_build_id']);
+    unset($params['form_token']);
+    unset($params['form_id']);
+    unset($params['op']);
+    foreach ($params as $key => $value) {
+      if(empty($value)) {
+        //unset($params[$key]);
+      }
+    }
+    //$form_state['rebuild'] = TRUE;
+    $form['pardot_iframe'] = array(
+      '#markup' => kidney_misc_get_pardot_iframe($params)
+    );
+    $prefs = l('preferences', 'http://www3.kidney.org/l/219342/2018-03-28/35knp', array('attributes' => array('target'=>'_BLANK')));
+    $form['confirmation'] = array(
+      '#markup' => '<div class="linkHighlight padding-top--xs padding-left--lg"><div class="bold">Thanks for signing up.</div><div>Manage your communication '.$prefs.'.</div>',
+    );
+    return $form;
+  }*/
+}
+function kidneys_misc_pardot_form_submit(&$form, &$form_state) {
+  // Get params from form.
+  $params = $form_state['values'];
+  // Unset stuff Pardot doesn't need.
+  unset($params['submit']);
+  unset($params['form_build_id']);
+  unset($params['form_token']);
+  unset($params['form_id']);
+  unset($params['op']);
+  $form['message'] = array(
+    '#type'=> 'contaner',
+  );
+
+
+  $prefs = l('preferences', 'http://www3.kidney.org/l/219342/2018-03-28/35knp', array('attributes' => array('target'=>'_BLANK')));
+  $prefs = '<div class="linkHighlight">Manage your communication '.$prefs.'.</div>';
+  $thanks = '<div class="bold">Thanks for signing up.</div>';
+  $form['message']['pardot_iframe'] = array(
+    '#markup' => kidney_misc_get_pardot_iframe($params)
+  );
+  $form['message']['confirmation'] = array(
+    '#markup' => '<div class="padding-top--xxs">'.$thanks.$prefs.'</div>',
+  );
+  if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+
+  } else {
+    drupal_set_message(drupal_render($form['message']));
+    //drupal_set_message('testing');
+  }
+  return $form;
+}
+function kidneys_misc_pardot_form_validate(&$form, &$form_state) {
+  $r = FALSE;
+  foreach($form_state['values'] as $value) {
+    if (empty($value)) {
+      $r = TRUE;
+    }
+  }
+  if ($r) {
+    form_set_error ('', t('Please fill out all fields') );
+  }
+
+}
+
 /**
  * Implements hook_page_alter().
  */
-function kidneys_misc_page_alter($page) {
+function kidneys_misc_page_alter(&$page) {
+
+  if (isset($_SESSION['pardot_email'])) {
+    $page['page_bottom']['pardot_email'] = array(
+      //'#markup' => kidney_misc_get_pardot_iframe()
+    );
+    $_SESSION['pardot_email'] = NULL;
+  }
   // Add setting for ajax requests.
   drupal_add_js(
     array(
@@ -973,4 +1188,87 @@ function kidneys_misc_generate_hash($length = 7) {
   }
   return FALSE;
 
+}
+
+function kidneys_misc_forms($form_id, $args) {
+  if (strpos($form_id, 'kidneys_misc_filtered_form') !== FALSE) {
+    $forms[$form_id] = array(
+      'callback' => 'kidneys_misc_filtered_form',
+    );
+    return $forms;
+  }
+  if (strpos($form_id, 'kidneys_misc_pardot_form') !== FALSE) {
+    $forms[$form_id] = array(
+      'callback' => 'kidneys_misc_pardot_form',
+    );
+    return $forms;
+  }
+}
+
+function kidneys_misc_get_filtered_form($categories, $placeholder) {
+  static $i = 0;
+
+  foreach($categories as $category) {
+    $terms[] = $category['tid'];
+  }
+  $form_id = 'kidneys_misc_filtered_form_' . $i;// . user_password();
+  $i++;
+  $form = drupal_get_form($form_id, $terms, $placeholder);
+  return render($form);
+}
+function kidneys_misc_filtered_form($form, &$form_state, $terms, $placeholder = '') {
+  $form = array();
+
+  $form['container'] = array(
+    '#type' => 'container',
+    '#attributes' => array(
+      'class' => array(
+        'search-form',
+      ),
+    ),
+  );
+  $form['container']['query'] = array(
+    '#type' => 'textfield',
+    '#required' => TRUE,
+    '#attributes' => array(
+      'placeholder' => trim($placeholder),
+    )
+  );
+  $form['container']['submit_button'] = array(
+    '#type' => 'submit',
+    '#value' => t('search'),
+    '#attributes' => array(
+      'class' => array(
+        'button--orange',
+      ),
+    ),
+  );
+  $form['terms'] = array(
+    '#type' => 'hidden',
+    '#value' => implode('-', $terms)
+  );
+
+  $form['#submit'] = array('kidneys_misc_filtered_form_submit');
+  return $form;
+}
+
+function kidneys_misc_filtered_form_submit($form, &$form_state) {
+  $terms = explode('-', $form_state['values']['terms']);
+  foreach($terms as $i => $term) {
+    if(!empty($term)) {
+      $query['f['.$i.']'] = 'field_ia_category:' .$term;
+    }
+  }
+  $query['solr-keywords'] = $form_state['values']['query'];
+
+  drupal_goto('site-search', array('query' => $query));
+}
+
+function kidney_misc_get_pardot_iframe($params) {
+
+  $form = 'https://go.pardot.com/l/219342/2018-07-16/3p1kj';
+  $url = url($form, array('query' => $params));
+  $iframe = '<iframe style="position:absolute; left:-10000px" src="'.$url.'"></iframe>';
+  //$iframe = '<iframe style="" src="'.$url.'"></iframe>';
+  return $iframe;
 }
