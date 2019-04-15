@@ -324,11 +324,14 @@ function kidneys_misc_dontion_gl_code($office_id, $gift_type = NULL) {
   if ($office_id >= 700 && $office_id < 800) {
     $three = '0000';
     // Memorial/Honor.
+    /*
     if (isset($gift_type) && $gift_type != '') {
       $four = '210';
     } else {
       $four = '209';
     }
+    */
+    $four = '100';
   } else {
     $three = '8000';
     // Memorial/Honor.
