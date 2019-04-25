@@ -224,13 +224,19 @@ function kidneys_misc_process_trial_form($form, &$form_state) {
 
     // If access is allowed and there is an address
     if ($access && $address_string) {
+      // Get the entityform_type id for views filtering.
+      $bundle = $wrapper->getBundle();
+      $query = "SELECT id FROM {entityform_type} WHERE type = :type";
+      $entity_form_type_id = db_query($query, array(':type' => $bundle))->fetchField();
+
+      // Geocode the address string.
       $point = geocoder('google', $address_string);
       if (!empty($point)) {
         $lon = $point->coords[0];
         $lat = $point->coords[1];
-        $arg = $lat . ',' . $lon;
+        $geo_coordinates = $lat . ',' . $lon;
         // Use view to look up location, this makes it easy to adjust in UI.
-        $result = views_get_view_result('clinical_trials_locator', 'default', $arg);
+        $result = views_get_view_result('clinical_trials_locator', 'default', $geo_coordinates, $entity_form_type_id);
         if (!empty($result)) {
           $location = $result[0]->nid;
         }
