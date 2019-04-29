@@ -1,11 +1,58 @@
 <?php
 
 /**
+ * Implements hook_filter_info().
+ */
+function kidneys_misc_filter_info() {
+  $filters['kidneys_misc_nkfcontact'] = array(
+    'title' => t('Embed Contact Form'),
+    'description' => t('Replaces [contact_nkf:fields:queue] with embedded form that sends data to Pardot or Formassembly.'),
+    'process callback' => 'kidneys_misc_filter_process',
+    'tips callback' => '_filter_kidneys_misc_tips',
+    'cache' => FALSE
+  );
+
+  return $filters;
+}
+
+function kidneys_misc_filter_process($text, $filter, $format) {
+  //return user_password();
+  if (preg_match_all('/ \[contact_nkf: ( [^\[\]]+ )* \] /x', $text, $match)) {
+    $search = $replace = array();
+    foreach ($match[0] as $key => $value) {
+      $parts = explode(':', $match[1][$key]);
+      $fields = array_map('trim', explode(',',$parts[0]));
+      if($queue = $parts[1]) {
+        $fields['queue'] = $queue;
+        $fields[] = 'queue';
+      }
+      $form = kidney_misc_get_nkfcontact_form($fields);
+      $form_output = drupal_render($form);
+      $search[] = $value;
+      $replace[] = !empty($form_output) ? $form_output : '';
+    }
+    return str_replace($search, $replace, $text);
+  }
+  return $text;
+
+}
+
+
+/**
+ * Implements callback_filter_tips().
+ *
+ * Provides help for the URL filter.
+ *
+ * @see filter_filter_info()
+ */
+function _filter_kidneys_misc_tips($filter, $format, $long = FALSE) {
+  return t('Replaces [contact_nkf:fields:queue] with embedded form that sends data to Pardot or Formassembly. List out the fields you want to include on the form, separated by commas. Available fields: <i>name, zip, phone, company, connection, </i>and <i>message</i>. <i>Email</i> is automatically included. Queue options include: <i>corporate, donation, health, media, event, professional, tech, volunteer, other</i>');
+}
+/**
  * Implements hook_form_alter
  */
 function kidneys_misc_form_alter(&$form, &$form_state, $form_id) {
   if ($form_id == 'iga_entityform_edit_form') {
-    //dpm($form);
     $form['actions']['#prefix'] = '<div class="">';
     $form['actions']['#suffix'] = '</div>';
 
@@ -453,15 +500,15 @@ function kidneys_misc_promotion_generator() {
   return $page;
 }
 
-function kidney_misc_get_pardot_form($fields = NULL, $submit_text = NULL) {
+function kidney_misc_get_nkfcontact_form($fields = NULL, $submit_text = NULL) {
   static $i = 0;
-  $form_id = 'kidneys_misc_pardot_form' . $i;// . user_password();
+  $form_id = 'kidneys_misc_nkfcontact_form' . $i;// . user_password();
   $i++;
   $form = drupal_get_form($form_id, $fields, $submit_text);
   return $form;
 }
 
-function kidneys_misc_pardot_form($form, &$form_state, $fields = NULL, $submit_text = NULL) {
+function kidneys_misc_nkfcontact_form($form, &$form_state, $fields = NULL, $submit_text = NULL) {
   $id = user_password();
   $form = array();
   $css_hack = empty($fields) ? 'search-form' : '';
@@ -469,85 +516,103 @@ function kidneys_misc_pardot_form($form, &$form_state, $fields = NULL, $submit_t
     '#type' => 'container',
     '#attributes' => array(
       'class' => array(
-        'pardot-form',
+        'nkfcontact-form',
+        'display--flex',
+        'flex-wrap--wrap',
+        'max-width--xxl',
         $css_hack
       ),
-      //'id' => 'pardot-form-' . $id
+      //'id' => 'nkfcontact-form-' . $id
     ),
-    '#prefix' => '<div id="pardot-form-'.$id.'">',
+    '#prefix' => '<div id="nkfcontact-form-'.$id.'">',
     '#suffix' => '</div>'
   );
   if(in_array('name', $fields)) {
     $form['container']['first_name'] = array(
       '#type' => 'textfield',
-      //'#required' => TRUE,
+      '#required' => TRUE,
       '#title' => t('First name'),
       '#title_display' => 'invisible',
       '#attributes' => array(
-        'placeholder' => t('First name')
+        'placeholder' => t('First name'),
       ),
+      '#prefix' => '<div class="width--50 padding-right--xxxs">',
+      '#suffix' => '</div>'
     );
 
     $form['container']['last_name'] = array(
       '#type' => 'textfield',
-      //'#required' => TRUE,
+      '#required' => TRUE,
       '#title' => t('Last name'),
       '#title_display' => 'invisible',
       '#attributes' => array(
         'placeholder' => t('Last name')
       ),
+      '#prefix' => '<div class="width--50 padding-left--xxxs">',
+      '#suffix' => '</div>'
     );
   }
 
   $form['container']['email'] = array(
     '#type' => 'textfield',
-    //'#required' => TRUE,
+    '#required' => TRUE,
     '#title' => t('Email'),
     '#title_display' => 'invisible',
     '#attributes' => array(
       'placeholder' => !empty($fields) ? t('Email') : t('Enter your email'),
       'type' => 'email',
-      //'onkeypress' => 'if(event.keyCode==13){this.form.submit();}'
+      'class' => array('width--100')
     ),
+    '#prefix' => '<div class="width--100">',
+    '#suffix' => '</div>'
   );
   if(in_array('phone', $fields))  {
     $form['container']['phone'] = array(
       '#type' => 'textfield',
-      //'#required' => TRUE,
+      '#required' => TRUE,
       '#title' => t('Phone'),
       '#title_display' => 'invisible',
       '#attributes' => array(
         'placeholder' => t('Phone'),
-        'type' => 'tel'
+        'type' => 'tel',
+        'class' => array('width--100')
       ),
+      '#prefix' => '<div class="width--100">',
+      '#suffix' => '</div>'
     );
   }
   if(in_array('zip', $fields)) {
     $form['container']['zip'] = array(
       '#type' => 'textfield',
-      //'#required' => TRUE,
+      '#required' => TRUE,
       '#title' => t('Zipcode'),
       '#title_display' => 'invisible',
       '#attributes' => array(
         'placeholder' => t('Zipcode'),
+        'class' => array('width--100')
       ),
+      '#prefix' => '<div class="width--100">',
+      '#suffix' => '</div>'
     );
   }
   if(in_array('company', $fields)) {
     $form['container']['company'] = array(
       '#type' => 'textfield',
-      //'#required' => TRUE,
+      '#required' => TRUE,
       '#title' => t('Company'),
       '#title_display' => 'invisible',
       '#attributes' => array(
         'placeholder' => t('Company'),
+        'class' => array('width--100')
       ),
+      '#prefix' => '<div class="width--100">',
+      '#suffix' => '</div>'
     );
   }
   if(in_array('connection', $fields))  {
-    $form['container']['Primary_Connection_to_Kidney_Disease'] = array(
+    $form['container']['connection'] = array(
       '#type' => 'select',
-      //'#required' => TRUE,
+      '#required' => TRUE,
       '#title' => t('Connection to kidney disease'),
       '#title_display' => 'invisible',
       '#default_value' => (isset($form_state['values']['Primary_Connection_to_Kidney_Disease'])) ? $form_state['values']['Primary_Connection_to_Kidney_Disease'] : ' ',
@@ -561,66 +626,61 @@ function kidneys_misc_pardot_form($form, &$form_state, $fields = NULL, $submit_t
       ),
       '#attributes' => array(
         'placeholder' => t('Connection to kidney disease'),
-      ),
+        'class' => array('width--100')
+      )
+      ,
+      '#prefix' => '<div class="width--100">',
+      '#suffix' => '</div>'
     );
   }
 
+  if(in_array('message', $fields)) {
+    $form['container']['message'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Message'),
+      '#title_display' => 'invisible',
+      '#rows' => 3,
+      '#attributes' => array(
+        'placeholder' => t('Message'),
+      ),
+    );
+  }
+  if(in_array('queue', $fields)) {
+    $form['container']['queue'] = array(
+      '#type' => 'hidden',
+      '#value' => $fields['queue'],
+    );
+  }
   $form['container']['submit'] = array(
    '#type' => 'submit',
    '#value' => !empty($submit_text) ? t($submit_text) : t('Sign Up'),
    '#ajax' => array(
-     'callback' => 'kidneys_misc_pardot_form_ajax',
-     'wrapper' => 'pardot-form-' . $id,
+     'callback' => 'kidneys_misc_nkfcontact_form_ajax',
+     'wrapper' => 'nkfcontact-form-' . $id,
      'method' => 'replace',
      'effect' => 'fade',
-   ),
+   )
   );
   if(count($fields)>1) {
-    $form['container']['submit']['#prefix'] = '<div class="margin-top--sm">';
+    $form['container']['submit']['#prefix'] = '<div class="margin-top--sm width--100">';
     $form['container']['submit']['#suffix'] = '</div>';
   }
-  $form['pardot_iframe'] = array(
+  $form['container']['nkfcontact_iframe'] = array(
     '#markup' => ''
   );
-  $form['confirmation'] = array(
+  $form['container']['confirmation'] = array(
     '#markup' => ''
   );
   return $form;
 }
-function kidneys_misc_pardot_form_ajax(&$form, &$form_state) {
+
+function kidneys_misc_nkfcontact_form_ajax(&$form, &$form_state) {
   return $form;
-  /*drupal_validate_form('kidneys_misc_pardot_form', $form, $form_state);
-  if (form_get_errors()) {
-    return $form;
-  } else {
-    // Get params from form.
-    $params = $form_state['values'];
-    // Unset stuff Pardot doesn't need.
-    unset($params['submit']);
-    unset($params['form_build_id']);
-    unset($params['form_token']);
-    unset($params['form_id']);
-    unset($params['op']);
-    foreach ($params as $key => $value) {
-      if(empty($value)) {
-        //unset($params[$key]);
-      }
-    }
-    //$form_state['rebuild'] = TRUE;
-    $form['pardot_iframe'] = array(
-      '#markup' => kidney_misc_get_pardot_iframe($params)
-    );
-    $prefs = l('preferences', 'http://www3.kidney.org/l/219342/2018-03-28/35knp', array('attributes' => array('target'=>'_BLANK')));
-    $form['confirmation'] = array(
-      '#markup' => '<div class="linkHighlight padding-top--xs padding-left--lg"><div class="bold">Thanks for signing up.</div><div>Manage your communication '.$prefs.'.</div>',
-    );
-    return $form;
-  }*/
 }
-function kidneys_misc_pardot_form_submit(&$form, &$form_state) {
+function kidneys_misc_nkfcontact_form_submit(&$form, &$form_state) {
   // Get params from form.
   $params = $form_state['values'];
-  // Unset stuff Pardot doesn't need.
+  // Unset stuff nkfcontact doesn't need.
   unset($params['submit']);
   unset($params['form_build_id']);
   unset($params['form_token']);
@@ -630,35 +690,147 @@ function kidneys_misc_pardot_form_submit(&$form, &$form_state) {
     '#type'=> 'contaner',
   );
 
-
-  $prefs = l('preferences', 'http://www3.kidney.org/l/219342/2018-03-28/35knp', array('attributes' => array('target'=>'_BLANK')));
-  $prefs = '<div class="linkHighlight">Manage your communication '.$prefs.'.</div>';
-  $thanks = '<div class="bold">Thanks for signing up.</div>';
-  $form['message']['pardot_iframe'] = array(
-    '#markup' => kidney_misc_get_pardot_iframe($params)
-  );
-  $form['message']['confirmation'] = array(
+  // Determine if we are sending the data to Pardot or Formassembly.
+  // For now, let's just send form submissions with a queue field
+  // or a message over to FA. Everything else goes to Pardot.
+  if(!empty($params['message']) || !empty($params['queue'])) {
+    kidneys_misc_contact_send_to_fa($params);
+    $prefs = '<div class="linkHighlight"></div>';
+    $thanks = '<div class="bold">Thanks.</div>';
+  } else {
+    $prefs = l('preferences', 'http://www3.kidney.org/l/219342/2018-03-28/35knp', array('attributes' => array('target'=>'_BLANK')));
+    $prefs = '<div class="linkHighlight">Manage your communication '.$prefs.'.</div>';
+    $thanks = '<div class="bold">Thanks for signing up.</div>';
+    $form['container']['nkfcontact_iframe'] = array(
+      '#markup' => kidney_misc_get_nkfcontact_iframe($params)
+    );
+  }
+  $form['container']['confirmation'] = array(
     '#markup' => '<div class="padding-top--xxs">'.$thanks.$prefs.'</div>',
   );
+
+
   if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
 
   } else {
     drupal_set_message(drupal_render($form['message']));
-    //drupal_set_message('testing');
   }
   return $form;
 }
-function kidneys_misc_pardot_form_validate(&$form, &$form_state) {
+
+function kidneys_misc_contact_send_to_fa($values) {
+
+  // TODO: make the URL, ID and Control editable in UI.
+  $fa_url = 'https://www.tfaforms.com/responses/processor';
+
+  $form_id = '4727556';
+
+  $form_control = '90bf6b18ac1aff1632f6dc4c7b77f82f';
+
+  $queue = array(
+    "tfa_2245" => 'Corporate Relations',
+    "tfa_2242" => 'Donations',
+    "tfa_2241" => 'Kidney Health Questions',
+    "tfa_2244" => 'Media Relations ',
+    "tfa_2250" => 'NKF Events (Golf, Walks, Gala, etc)',
+    "tfa_2243" => 'Professional Memberships/CME/KDOQI',
+    "tfa_2253" => 'Technical Problems with the Website',
+    "tfa_2252" => 'Volunteer Opportunities ',
+    "tfa_2255" => 'Other',
+  );
+
+  $connection_to_kd = array(
+    "tfa_2184" => "I am a kidney patient",
+    "tfa_2185" => "I am a friend/family of a kidney patient",
+    "tfa_2186" => "I am a healthcare professional",
+    "tfa_2187" => "I am a living donor",
+    "tfa_2188" => "Other"
+  );
+
+  $professional_category = array(
+    "tfa_2229" => "Dietitian",
+    "tfa_2231" => "Fellow",
+    "tfa_2237" => "Nurse",
+    "tfa_2235" => "Nurse Practitioner",
+    "tfa_2226" => "Nurse Technician",
+    "tfa_2234" => "Pharmacist",
+    "tfa_2232" => "Physician",
+    "tfa_2230" => "Physician Assistant",
+    "tfa_2227" => "Resident",
+    "tfa_2233" => "Scientist",
+    "tfa_2228" => "Social Worker",
+    "tfa_2236" => "Technician",
+    "tfa_2238" => "Other",
+  );
+
+  $email_preferences = array(
+    'tfa_2286' => 'Research News',
+    'tfa_2287' => 'Advocacy and Action',
+    'tfa_2288' => 'Foundation News and Community Updates',
+    'tfa_2289' => 'NKF Events',
+    'tfa_2290' => 'Wellness Tips Recipes Special Issues',
+    'tfa_2291' => 'Information for my patients',
+    'tfa_2292' => 'Research Grant Opportunities',
+    'tfa_2293' => 'Clinical Tools and CE Alerts'
+  );
+
+  $vq = $values['queue'];
+  $q = array_filter($queue, function($el) use ($vq) {
+    return ( strpos(strtolower($el), strtolower($vq)) !== false );
+  });
+  $q = array_keys($q);
+  $q = reset($q);
+  $data = array(
+    // First Name.
+    'tfa_3' => !empty($values['first_name']) ? $values['first_name'] : '',
+    // Last Name.
+    'tfa_5' => !empty($values['last_name']) ? $values['last_name'] : '',
+    // Email.
+    'tfa_2181' => !empty($values['email']) ? $values['email'] : '',
+    // Zipcode.
+    'tfa_2177' => !empty($values['zip']) ? $values['zip'] : '',
+    // Phone.
+    'tfa_2182' => !empty($values['phone']) ? $values['phone'] : '',
+    // Company.
+    'tfa_2239' => !empty($values['company']) ? $values['company'] : '',
+    // Connection to kidney disease.
+    'tfa_2183' => !empty($values['connection']) ? array_search($values['connection'], $connection_to_kd) : '',
+    // Professional Category.
+    'tfa_2225' => !empty($values['professional']) ? array_search($values['professional'], $professional_category ) : '',
+    // Topic/Queue.
+    'tfa_2240' => !empty($q) ? $q: '',
+    // Email Preferences.
+    //'tfa_2293' => 1,
+    // Message.
+    'tfa_2256' => !empty($values['message']) ? $values['message'] : '',
+    'tfa_dbFormId' => $form_id,
+    'tfa_dbControl' => $form_control,
+    //'tfa_dbVersionId' => 1,
+    //'tfa_switchedoff' => '',
+    //'tfa_dbResponseId' => ''
+  );
+
+  $options = array(
+    'method' => 'POST',
+    'data' => drupal_http_build_query($data),
+    'timeout' => 15,
+    'headers' => array('Content-Type' => 'application/x-www-form-urlencoded'),
+  );
+  $result = drupal_http_request($fa_url, $options);
+}
+
+function kidneys_misc_nkfcontact_form_validate(&$form, &$form_state) {
+  /* DEPRECATED, letting regular required field validation do this.
   $r = FALSE;
-  foreach($form_state['values'] as $value) {
-    if (empty($value)) {
+  foreach($form_state['values'] as $key => $value) {
+    if (empty($value) && $key != 'message') {
       $r = TRUE;
     }
   }
   if ($r) {
     form_set_error ('', t('Please fill out all fields') );
   }
-
+  */
 }
 
 /**
@@ -666,11 +838,11 @@ function kidneys_misc_pardot_form_validate(&$form, &$form_state) {
  */
 function kidneys_misc_page_alter(&$page) {
 
-  if (isset($_SESSION['pardot_email'])) {
-    $page['page_bottom']['pardot_email'] = array(
-      //'#markup' => kidney_misc_get_pardot_iframe()
+  if (isset($_SESSION['nkfcontact_email'])) {
+    $page['page_bottom']['nkfcontact_email'] = array(
+      //'#markup' => kidney_misc_get_nkfcontact_iframe()
     );
-    $_SESSION['pardot_email'] = NULL;
+    $_SESSION['nkfcontact_email'] = NULL;
   }
   // Add setting for ajax requests.
   drupal_add_js(
@@ -749,7 +921,7 @@ function kidneys_misc_block_info() {
     'info' => t('Content Actions Top'),
   );
   $blocks['kidneys_misc_pardot_progressive'] = array(
-    'info' => t('Pardot Progressive Modal Form'),
+    'info' => t('nkfcontact Progressive Modal Form'),
   );
   $blocks['kidneys_misc_proximate_events'] = array(
     'info' => t('Nearby Events'),
@@ -802,7 +974,7 @@ function kidneys_misc_block_view($delta = '') {
   switch ($delta) {
     case 'kidneys_misc_pardot_progressive':
       $block['subject'] = 'Newsletter Sign Up';
-      $block['content'] = kidneys_misc_get_pardot();
+      $block['content'] = kidneys_misc_get_nkfcontact();
     break;
     case 'kidneys_misc_proximate_events':
       $block['subject'] = 'Nearby Events';
@@ -893,19 +1065,19 @@ function kidneys_misc_block_view($delta = '') {
   }
   return $block;
 }
-// Block content callback for pardot signup form.
-// TODO update pardot url.
-function kidneys_misc_get_pardot() {
+// Block content callback for nkfcontact signup form.
+// TODO update nkfcontact url.
+function kidneys_misc_get_nkfcontact() {
   $path = drupal_get_path('module', 'kidneys_misc');
   drupal_add_js($path . '/kidneys_misc_pardot.js');
   // add pop js/class
   $magnificpath = libraries_get_path('magnific_popup');
   drupal_add_js($magnificpath . '/dist/jquery.magnific-popup.js');
   drupal_add_css($magnificpath . '/dist/magnific-popup.css');
-  $markup = '<div class="pardot-email">';
+  $markup = '<div class="nkfcontact-email">';
   $markup .= '<iframe src="https://go.pardot.com/l/219342/2016-08-31/77f" width="100%" type="text/html" frameborder="0" allowTransparency="true" style="border: 0"></iframe>';
   $markup .= "</div>";
-  $markup .= '<div id="pardot-progressive" class="white-popup mfp-hide" style="position:relative;background:white; padding:25px;width:auto;max-width:400px;margin:0 auto">';
+  $markup .= '<div id="nkfcontact-progressive" class="white-popup mfp-hide" style="position:relative;background:white; padding:25px;width:auto;max-width:400px;margin:0 auto">';
   $markup .= "</div>";
   return $markup;
 }
@@ -1197,9 +1369,9 @@ function kidneys_misc_forms($form_id, $args) {
     );
     return $forms;
   }
-  if (strpos($form_id, 'kidneys_misc_pardot_form') !== FALSE) {
+  if (strpos($form_id, 'kidneys_misc_nkfcontact_form') !== FALSE) {
     $forms[$form_id] = array(
-      'callback' => 'kidneys_misc_pardot_form',
+      'callback' => 'kidneys_misc_nkfcontact_form',
     );
     return $forms;
   }
@@ -1216,6 +1388,7 @@ function kidneys_misc_get_filtered_form($categories, $placeholder) {
   $form = drupal_get_form($form_id, $terms, $placeholder);
   return render($form);
 }
+
 function kidneys_misc_filtered_form($form, &$form_state, $terms, $placeholder = '') {
   $form = array();
 
@@ -1264,7 +1437,7 @@ function kidneys_misc_filtered_form_submit($form, &$form_state) {
   drupal_goto('site-search', array('query' => $query));
 }
 
-function kidney_misc_get_pardot_iframe($params) {
+function kidney_misc_get_nkfcontact_iframe($params) {
 
   $form = 'https://go.pardot.com/l/219342/2018-07-16/3p1kj';
   $url = url($form, array('query' => $params));
