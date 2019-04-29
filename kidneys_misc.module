@@ -536,7 +536,7 @@ function kidneys_misc_nkfcontact_form($form, &$form_state, $fields = NULL, $subm
       '#attributes' => array(
         'placeholder' => t('First name'),
       ),
-      '#prefix' => '<div class="width--50 padding-right--xxxs">',
+      '#prefix' => '<div class="width--50 padding-right--xxs">',
       '#suffix' => '</div>'
     );
 
@@ -548,7 +548,7 @@ function kidneys_misc_nkfcontact_form($form, &$form_state, $fields = NULL, $subm
       '#attributes' => array(
         'placeholder' => t('Last name')
       ),
-      '#prefix' => '<div class="width--50 padding-left--xxxs">',
+      '#prefix' => '<div class="width--50 padding-left--xxs">',
       '#suffix' => '</div>'
     );
   }
@@ -653,7 +653,7 @@ function kidneys_misc_nkfcontact_form($form, &$form_state, $fields = NULL, $subm
   }
   $form['container']['submit'] = array(
    '#type' => 'submit',
-   '#value' => !empty($submit_text) ? t($submit_text) : t('Sign Up'),
+   '#value' => !empty($submit_text) ? t($submit_text) : t('Submit'),
    '#ajax' => array(
      'callback' => 'kidneys_misc_nkfcontact_form_ajax',
      'wrapper' => 'nkfcontact-form-' . $id,
