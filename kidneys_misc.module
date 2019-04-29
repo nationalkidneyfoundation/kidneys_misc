@@ -974,7 +974,7 @@ function kidneys_misc_block_view($delta = '') {
   switch ($delta) {
     case 'kidneys_misc_pardot_progressive':
       $block['subject'] = 'Newsletter Sign Up';
-      $block['content'] = kidneys_misc_get_nkfcontact();
+      $block['content'] = kidneys_misc_get_pardot();
     break;
     case 'kidneys_misc_proximate_events':
       $block['subject'] = 'Nearby Events';
@@ -1067,7 +1067,7 @@ function kidneys_misc_block_view($delta = '') {
 }
 // Block content callback for nkfcontact signup form.
 // TODO update nkfcontact url.
-function kidneys_misc_get_nkfcontact() {
+function kidneys_misc_get_pardot() {
   $path = drupal_get_path('module', 'kidneys_misc');
   drupal_add_js($path . '/kidneys_misc_pardot.js');
   // add pop js/class
@@ -1077,7 +1077,7 @@ function kidneys_misc_get_nkfcontact() {
   $markup = '<div class="nkfcontact-email">';
   $markup .= '<iframe src="https://go.pardot.com/l/219342/2016-08-31/77f" width="100%" type="text/html" frameborder="0" allowTransparency="true" style="border: 0"></iframe>';
   $markup .= "</div>";
-  $markup .= '<div id="nkfcontact-progressive" class="white-popup mfp-hide" style="position:relative;background:white; padding:25px;width:auto;max-width:400px;margin:0 auto">';
+  $markup .= '<div id="pardot-progressive" class="white-popup mfp-hide" style="position:relative;background:white; padding:25px;width:auto;max-width:400px;margin:0 auto">';
   $markup .= "</div>";
   return $markup;
 }
