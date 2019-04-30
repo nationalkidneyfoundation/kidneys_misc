@@ -696,7 +696,7 @@ function kidneys_misc_nkfcontact_form_submit(&$form, &$form_state) {
   if(!empty($params['message']) || !empty($params['queue'])) {
     kidneys_misc_contact_send_to_fa($params);
     $prefs = '<div class="linkHighlight"></div>';
-    $thanks = '<div class="bold">Thanks.</div>';
+    $thanks = '<div class="bold">Thanks for filling out our form!</div>';
   } else {
     $prefs = l('preferences', 'http://www3.kidney.org/l/219342/2018-03-28/35knp', array('attributes' => array('target'=>'_BLANK')));
     $prefs = '<div class="linkHighlight">Manage your communication '.$prefs.'.</div>';
