@@ -9,7 +9,7 @@ function kidneys_misc_form_alter(&$form, &$form_state, $form_id) {
     $form['#validate'][] = 'kidneys_misc_trial_validate';
   }
 
-  if ($form_id == 'iga_entityform_edit_form') {
+  if ($form_id == 'iga_entityform_edit_form' || $form_id == 'iga_artemis_entityform_edit_form') {
     //dpm($form);
     $form['actions']['#prefix'] = '<div class="">';
     $form['actions']['#suffix'] = '</div>';
