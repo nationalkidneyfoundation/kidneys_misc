@@ -121,6 +121,55 @@ function kidneys_misc_trial_validate(&$form, &$form_state) {
 // Duplicate, uncomment, and update values indicated (!CHANGE) below to add a new trial.
 //    // Machine name of the entityform.
 //    // !CHANGE CASE FOR NEW TRIAL
+    case 'iga_artemis':
+//
+//      // Add trial flag.
+      $is_trial = TRUE;
+//
+//      //  Adds machine name of fields whose data should be stored.
+//      // All other fields data will be cleared after form processing.
+//      // !CHANGE THIS ARRAY FOR NEW TRIAL
+      $fields_to_keep = array(
+        'field_base_first_name',
+        'field_base_last_name',
+        'field_base_email',
+        'field_base_address',
+        'field_base_phone'
+      );
+
+      // Add machine name of fields that should return TRUE.
+      // !CHANGE THIS ARRAY FOR NEW TRIAL
+      $fields_true = array(
+        'field_iga_18',
+        'field_igan_biopsy_years',
+        'field_igan_biopsy',
+        'field_igan'
+      );
+
+      // Add machine name of fields that should return FALSE.
+      // !CHANGE THIS ARRAY FOR NEW TRIAL
+      $fields_false = array(
+        'field_igan_transplant',
+      );
+
+      // Machine name of field that stores user submitted address.
+      // !CHANGE THIS STRING FOR NEW TRIAL
+      $address_field = 'field_base_address';
+
+      // Destination to be redirected to after form processing.
+      // The webform submission id will be appended to the URL when redirecting.
+      // Ex: iga-trial/results will redirect to iga-trial/results/430 where 430 is the submission id.
+      // !CHANGE THIS STRING FOR NEW TRIAL
+      //
+      $trial_redirect_path = 'iga-trial/results';
+
+      // Machine name of field that should store the closest center found after form processing.
+      // !CHANGE THIS STRING FOR NEW TRIAL
+      $trial_location_field_name = 'field_iga_closest_center';
+      break;
+// Duplicate, uncomment, and update values indicated (!CHANGE) below to add a new trial.
+//    // Machine name of the entityform.
+//    // !CHANGE CASE FOR NEW TRIAL
 //    case 'new_trial':
 //
 //      // Add trial flag.
