@@ -340,9 +340,8 @@ function kidneys_misc_entityform_insert($entityform) {
     $submission_wrapper = entity_metadata_wrapper('entityform', $submission);
     $submission_wrapper->{$entityform->trial_location_field_name}->set($entityform->nearest_trial_location);
     $submission_wrapper->save();
+    drupal_goto($entityform->trial_redirect_path . '/' . $entityform->entityform_id);
   }
-
-  drupal_goto($entityform->trial_redirect_path . '/' . $entityform->entityform_id);
 }
 
 function kidneys_misc_views_pre_render ( &$view ) {
@@ -1528,8 +1527,8 @@ function kidneys_misc_theme($existing, $type, $theme, $path){
         'no_label' => t('No'),
         'value' => NULL,
         'action' => 'rate',
-        'question' => t('Was this content useful?'),
-        'thanks' => t('Thanks for your input')
+        'question' => t('Is this content useful?'),
+        'thanks' => t('Thank you for your feedback.')
       )
     )
   );
@@ -1544,15 +1543,15 @@ function kidneys_misc_theme($existing, $type, $theme, $path){
  * @return string
  *  html for rating widget
  */
- function nkf_misc_get_rate_widget($category, $value, $action = NULL, $yes = NULL, $no = NULL, $question = NULL, $thanks = NULL) {
+ function nkf_misc_get_rate_widget($category, $value = NULL, $action = NULL, $yes = NULL, $no = NULL, $question = NULL, $thanks = NULL) {
    $array = array(
      'category' => $category,
      'value' => $value,
      'action' => $action,
-     'yes_label' => $yes,
-     'no_label' => $no,
-     'question' => $question,
-     'thanks' => $thanks
+     'yes_label' => ($yes) ? $yes : t('Yes'),
+     'no_label' => ($no) ? $no : t('No'),
+     'question' => ($question) ? $question : t('Is this content useful?'),
+     'thanks' => ($thanks) ? $thanks : t('Thank you for your feedback.')
    );
    return theme('kidney_misc_google_rate_widget', $array);
  }
