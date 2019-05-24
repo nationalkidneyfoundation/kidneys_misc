@@ -1511,3 +1511,48 @@ function kidney_misc_get_pardot_iframe($params) {
   //$iframe = '<iframe style="" src="'.$url.'"></iframe>';
   return $iframe;
 }
+
+/*
+ * Implementation of hook_theme.
+ */
+function kidneys_misc_theme($existing, $type, $theme, $path){
+  return array(
+    'kidney_misc_google_rate_widget' => array(
+      'template' => 'kidneys-misc-rate-widget',
+      'path' => drupal_get_path('module', 'kidneys_misc') . '/templates',
+      'type' => 'theme',
+      'variables' => array(
+        'id' => NULL,
+        'category' => NULL,
+        'yes_label' => t('Yes'),
+        'no_label' => t('No'),
+        'value' => NULL,
+        'action' => 'rate',
+        'question' => t('Was this content useful?'),
+        'thanks' => t('Thanks for your input')
+      )
+    )
+  );
+}
+
+/**
+ * Returns html for content rating via google analtyics.
+ * Currently requires nkf_base theme.
+ *
+ * @param string
+ *
+ * @return string
+ *  html for rating widget
+ */
+ function nkf_misc_get_rate_widget($category, $value, $action = NULL, $yes = NULL, $no = NULL, $question = NULL, $thanks = NULL) {
+   $array = array(
+     'category' => $category,
+     'value' => $value,
+     'action' => $action,
+     'yes_label' => $yes,
+     'no_label' => $no,
+     'question' => $question,
+     'thanks' => $thanks
+   );
+   return theme('kidney_misc_google_rate_widget', $array);
+ }
