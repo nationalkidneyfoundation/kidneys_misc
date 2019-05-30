@@ -270,8 +270,9 @@ function kidneys_misc_process_trial_form($form, &$form_state) {
     }
     // If any fields are true, false test doesn't pass.
     foreach ($form['fields_false'] as $false_field) {
+      print $false_field . "<br>";
       if (isset($wrapper->{$false_field})) {
-        dpm($wrapper->{$false_field}->value(), 'false '. $false_field);
+        watchdog($false_field, '<pre>' . print_r($wrapper->{$false_field}->value(),1) . '</pre>');
         if (!empty($wrapper->{$false_field}->value())) {
           $false_passes = FALSE;
         }
