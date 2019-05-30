@@ -10,7 +10,425 @@
  */
 function kidneys_misc_features_views_default_views() {
   $export = array();
-
+  $view = new view();
+  $view->name = 'clinical_trials_locator';
+  $view->description = '';
+  $view->tag = 'default';
+  $view->base_table = 'node';
+  $view->human_name = 'Clinical Trials Locator';
+  $view->core = 7;
+  $view->api_version = '3.0';
+  $view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
+  /* Display: Master */
+  $handler = $view->new_display('default', 'Master', 'default');
+  $handler->display->display_options['use_more_always'] = FALSE;
+  $handler->display->display_options['access']['type'] = 'perm';
+  $handler->display->display_options['cache']['type'] = 'none';
+  $handler->display->display_options['query']['type'] = 'views_query';
+  $handler->display->display_options['exposed_form']['type'] = 'basic';
+  $handler->display->display_options['pager']['type'] = 'some';
+  $handler->display->display_options['pager']['options']['items_per_page'] = '1';
+  $handler->display->display_options['pager']['options']['offset'] = '0';
+  $handler->display->display_options['style_plugin'] = 'default';
+  $handler->display->display_options['row_plugin'] = 'fields';
+  /* Field: Content: Title */
+  $handler->display->display_options['fields']['title']['id'] = 'title';
+  $handler->display->display_options['fields']['title']['table'] = 'node';
+  $handler->display->display_options['fields']['title']['field'] = 'title';
+  $handler->display->display_options['fields']['title']['label'] = '';
+  $handler->display->display_options['fields']['title']['alter']['word_boundary'] = FALSE;
+  $handler->display->display_options['fields']['title']['alter']['ellipsis'] = FALSE;
+  $handler->display->display_options['fields']['title']['element_label_colon'] = FALSE;
+  $handler->display->display_options['fields']['title']['link_to_node'] = FALSE;
+  /* Field: Content: Geofield */
+  $handler->display->display_options['fields']['field_base_geofield']['id'] = 'field_base_geofield';
+  $handler->display->display_options['fields']['field_base_geofield']['table'] = 'field_data_field_base_geofield';
+  $handler->display->display_options['fields']['field_base_geofield']['field'] = 'field_base_geofield';
+  $handler->display->display_options['fields']['field_base_geofield']['click_sort_column'] = 'geom';
+  $handler->display->display_options['fields']['field_base_geofield']['type'] = 'geofield_latlon';
+  $handler->display->display_options['fields']['field_base_geofield']['settings'] = array(
+    'data' => 'full',
+    'format' => 'decimal_degrees',
+    'labels' => 1,
+  );
+  /* Field: Content: Geofield (field_base_geofield) - proximity */
+  $handler->display->display_options['fields']['field_geofield_distance']['id'] = 'field_geofield_distance';
+  $handler->display->display_options['fields']['field_geofield_distance']['table'] = 'field_data_field_base_geofield';
+  $handler->display->display_options['fields']['field_geofield_distance']['field'] = 'field_geofield_distance';
+  $handler->display->display_options['fields']['field_geofield_distance']['label'] = '';
+  $handler->display->display_options['fields']['field_geofield_distance']['element_label_colon'] = FALSE;
+  $handler->display->display_options['fields']['field_geofield_distance']['set_precision'] = TRUE;
+  $handler->display->display_options['fields']['field_geofield_distance']['precision'] = '0';
+  $handler->display->display_options['fields']['field_geofield_distance']['source'] = 'contextual_geofield_filter';
+  $handler->display->display_options['fields']['field_geofield_distance']['geofield_proximity_manual'] = array(
+    'lat' => '',
+    'lon' => '',
+  );
+  $handler->display->display_options['fields']['field_geofield_distance']['geofield_proximity_entity_url_field'] = 'field_base_geofield';
+  $handler->display->display_options['fields']['field_geofield_distance']['geofield_proximity_current_user_field'] = 'field_base_geofield';
+  $handler->display->display_options['fields']['field_geofield_distance']['radius_of_earth'] = '3959';
+  /* Field: Field: Address */
+  $handler->display->display_options['fields']['field_base_address']['id'] = 'field_base_address';
+  $handler->display->display_options['fields']['field_base_address']['table'] = 'field_data_field_base_address';
+  $handler->display->display_options['fields']['field_base_address']['field'] = 'field_base_address';
+  $handler->display->display_options['fields']['field_base_address']['label'] = '';
+  $handler->display->display_options['fields']['field_base_address']['exclude'] = TRUE;
+  $handler->display->display_options['fields']['field_base_address']['element_label_colon'] = FALSE;
+  $handler->display->display_options['fields']['field_base_address']['click_sort_column'] = 'country';
+  $handler->display->display_options['fields']['field_base_address']['settings'] = array(
+    'use_widget_handlers' => 1,
+    'format_handlers' => array(
+      'address' => 'address',
+    ),
+  );
+  /* Field: Field: Address */
+  $handler->display->display_options['fields']['field_base_address_1']['id'] = 'field_base_address_1';
+  $handler->display->display_options['fields']['field_base_address_1']['table'] = 'field_data_field_base_address';
+  $handler->display->display_options['fields']['field_base_address_1']['field'] = 'field_base_address';
+  $handler->display->display_options['fields']['field_base_address_1']['label'] = '';
+  $handler->display->display_options['fields']['field_base_address_1']['exclude'] = TRUE;
+  $handler->display->display_options['fields']['field_base_address_1']['alter']['alter_text'] = TRUE;
+  $handler->display->display_options['fields']['field_base_address_1']['alter']['text'] = '[field_base_address_1-thoroughfare]+[field_base_address_1-locality]+[field_base_address_1-administrative_area]+[field_base_address_1-postal_code]';
+  $handler->display->display_options['fields']['field_base_address_1']['element_label_colon'] = FALSE;
+  $handler->display->display_options['fields']['field_base_address_1']['click_sort_column'] = 'country';
+  $handler->display->display_options['fields']['field_base_address_1']['settings'] = array(
+    'use_widget_handlers' => 1,
+    'format_handlers' => array(
+      'address' => 'address',
+    ),
+  );
+  /* Sort criterion: Content: Geofield (field_base_geofield) - proximity */
+  $handler->display->display_options['sorts']['field_geofield_distance']['id'] = 'field_geofield_distance';
+  $handler->display->display_options['sorts']['field_geofield_distance']['table'] = 'field_data_field_base_geofield';
+  $handler->display->display_options['sorts']['field_geofield_distance']['field'] = 'field_geofield_distance';
+  $handler->display->display_options['sorts']['field_geofield_distance']['source'] = 'contextual_geofield_filter';
+  $handler->display->display_options['sorts']['field_geofield_distance']['geofield_proximity_manual'] = array(
+    'lat' => '',
+    'lon' => '',
+  );
+  $handler->display->display_options['sorts']['field_geofield_distance']['geofield_proximity_entity_url_field'] = 'field_base_geofield';
+  $handler->display->display_options['sorts']['field_geofield_distance']['geofield_proximity_current_user_field'] = 'field_base_geofield';
+  /* Contextual filter: Content: Geofield (field_base_geofield) - proximity */
+  $handler->display->display_options['arguments']['field_geofield_distance']['id'] = 'field_geofield_distance';
+  $handler->display->display_options['arguments']['field_geofield_distance']['table'] = 'field_data_field_base_geofield';
+  $handler->display->display_options['arguments']['field_geofield_distance']['field'] = 'field_geofield_distance';
+  $handler->display->display_options['arguments']['field_geofield_distance']['default_action'] = 'not found';
+  $handler->display->display_options['arguments']['field_geofield_distance']['default_argument_type'] = 'fixed';
+  $handler->display->display_options['arguments']['field_geofield_distance']['summary']['number_of_records'] = '0';
+  $handler->display->display_options['arguments']['field_geofield_distance']['summary']['format'] = 'default_summary';
+  $handler->display->display_options['arguments']['field_geofield_distance']['summary_options']['items_per_page'] = '25';
+  $handler->display->display_options['arguments']['field_geofield_distance']['proximity'] = array(
+    'operation' => 'lt',
+    'default_radius' => '300',
+    'radius_unit' => '3959',
+  );
+  /* Contextual filter: Content: Clinical Trial (field_clinical_trial) */
+  $handler->display->display_options['arguments']['field_clinical_trial_target_id']['id'] = 'field_clinical_trial_target_id';
+  $handler->display->display_options['arguments']['field_clinical_trial_target_id']['table'] = 'field_data_field_clinical_trial';
+  $handler->display->display_options['arguments']['field_clinical_trial_target_id']['field'] = 'field_clinical_trial_target_id';
+  $handler->display->display_options['arguments']['field_clinical_trial_target_id']['default_action'] = 'default';
+  $handler->display->display_options['arguments']['field_clinical_trial_target_id']['default_argument_type'] = 'fixed';
+  $handler->display->display_options['arguments']['field_clinical_trial_target_id']['summary']['number_of_records'] = '0';
+  $handler->display->display_options['arguments']['field_clinical_trial_target_id']['summary']['format'] = 'default_summary';
+  $handler->display->display_options['arguments']['field_clinical_trial_target_id']['summary_options']['items_per_page'] = '25';
+  /* Filter criterion: Content: Type */
+  $handler->display->display_options['filters']['type']['id'] = 'type';
+  $handler->display->display_options['filters']['type']['table'] = 'node';
+  $handler->display->display_options['filters']['type']['field'] = 'type';
+  $handler->display->display_options['filters']['type']['value'] = array(
+    'location' => 'location',
+  );
+  $handler->display->display_options['filters']['type']['group'] = 1;
+  /* Filter criterion: Content: Published */
+  $handler->display->display_options['filters']['status']['id'] = 'status';
+  $handler->display->display_options['filters']['status']['table'] = 'node';
+  $handler->display->display_options['filters']['status']['field'] = 'status';
+  $handler->display->display_options['filters']['status']['value'] = '1';
+  $handler->display->display_options['filters']['status']['group'] = 1;
+  /* Display: Block */
+  $handler = $view->new_display('block', 'Block', 'block_1');
+  /* Display: Block 2 */
+  $handler = $view->new_display('block', 'Block 2', 'block_2');
+  $handler->display->display_options['defaults']['pager'] = FALSE;
+  $handler->display->display_options['pager']['type'] = 'full';
+  $handler->display->display_options['pager']['options']['items_per_page'] = '10';
+  $handler->display->display_options['pager']['options']['offset'] = '0';
+  $handler->display->display_options['pager']['options']['id'] = '0';
+  $handler->display->display_options['pager']['options']['quantity'] = '9';
+  $handler->display->display_options['defaults']['arguments'] = FALSE;
+  /* Contextual filter: Content: Geofield (field_base_geofield) - proximity */
+  $handler->display->display_options['arguments']['field_geofield_distance']['id'] = 'field_geofield_distance';
+  $handler->display->display_options['arguments']['field_geofield_distance']['table'] = 'field_data_field_base_geofield';
+  $handler->display->display_options['arguments']['field_geofield_distance']['field'] = 'field_geofield_distance';
+  $handler->display->display_options['arguments']['field_geofield_distance']['default_action'] = 'not found';
+  $handler->display->display_options['arguments']['field_geofield_distance']['default_argument_type'] = 'fixed';
+  $handler->display->display_options['arguments']['field_geofield_distance']['summary']['number_of_records'] = '0';
+  $handler->display->display_options['arguments']['field_geofield_distance']['summary']['format'] = 'default_summary';
+  $handler->display->display_options['arguments']['field_geofield_distance']['summary_options']['items_per_page'] = '25';
+  $handler->display->display_options['arguments']['field_geofield_distance']['proximity'] = array(
+    'operation' => 'lt',
+    'default_radius' => '5000',
+    'radius_unit' => '3959',
+  );
+  /* Display: Block 3 */
+  $handler = $view->new_display('block', 'Block 3', 'block_3');
+  $handler->display->display_options['defaults']['pager'] = FALSE;
+  $handler->display->display_options['pager']['type'] = 'some';
+  $handler->display->display_options['pager']['options']['items_per_page'] = '0';
+  $handler->display->display_options['pager']['options']['offset'] = '0';
+  $handler->display->display_options['defaults']['style_plugin'] = FALSE;
+  $handler->display->display_options['style_plugin'] = 'table';
+  $handler->display->display_options['style_options']['columns'] = array(
+    'title' => 'title',
+    'field_base_geofield' => 'field_base_geofield',
+    'field_geofield_distance' => 'field_geofield_distance',
+    'field_base_address' => 'field_base_address',
+    'field_base_address_1' => 'field_base_address_1',
+  );
+  $handler->display->display_options['style_options']['default'] = '-1';
+  $handler->display->display_options['style_options']['info'] = array(
+    'title' => array(
+      'sortable' => 0,
+      'default_sort_order' => 'asc',
+      'align' => '',
+      'separator' => '',
+      'empty_column' => 0,
+    ),
+    'field_base_geofield' => array(
+      'sortable' => 0,
+      'default_sort_order' => 'asc',
+      'align' => '',
+      'separator' => '',
+      'empty_column' => 0,
+    ),
+    'field_geofield_distance' => array(
+      'sortable' => 0,
+      'default_sort_order' => 'asc',
+      'align' => '',
+      'separator' => '',
+      'empty_column' => 0,
+    ),
+    'field_base_address' => array(
+      'sortable' => 0,
+      'default_sort_order' => 'asc',
+      'align' => '',
+      'separator' => '',
+      'empty_column' => 0,
+    ),
+    'field_base_address_1' => array(
+      'sortable' => 0,
+      'default_sort_order' => 'asc',
+      'align' => '',
+      'separator' => '',
+      'empty_column' => 0,
+    ),
+  );
+  $handler->display->display_options['defaults']['style_options'] = FALSE;
+  $handler->display->display_options['defaults']['row_plugin'] = FALSE;
+  $handler->display->display_options['defaults']['row_options'] = FALSE;
+  $handler->display->display_options['defaults']['fields'] = FALSE;
+  /* Field: Global: View result counter */
+  $handler->display->display_options['fields']['counter']['id'] = 'counter';
+  $handler->display->display_options['fields']['counter']['table'] = 'views';
+  $handler->display->display_options['fields']['counter']['field'] = 'counter';
+  $handler->display->display_options['fields']['counter']['label'] = '';
+  $handler->display->display_options['fields']['counter']['element_label_colon'] = FALSE;
+  $handler->display->display_options['fields']['counter']['counter_start'] = '1';
+  $handler->display->display_options['fields']['counter']['reverse'] = 0;
+  /* Field: Content: Title */
+  $handler->display->display_options['fields']['title']['id'] = 'title';
+  $handler->display->display_options['fields']['title']['table'] = 'node';
+  $handler->display->display_options['fields']['title']['field'] = 'title';
+  $handler->display->display_options['fields']['title']['label'] = 'Name';
+  $handler->display->display_options['fields']['title']['alter']['word_boundary'] = FALSE;
+  $handler->display->display_options['fields']['title']['alter']['ellipsis'] = FALSE;
+  $handler->display->display_options['fields']['title']['element_label_colon'] = FALSE;
+  $handler->display->display_options['fields']['title']['link_to_node'] = FALSE;
+  /* Field: Field: Address */
+  $handler->display->display_options['fields']['field_base_address']['id'] = 'field_base_address';
+  $handler->display->display_options['fields']['field_base_address']['table'] = 'field_data_field_base_address';
+  $handler->display->display_options['fields']['field_base_address']['field'] = 'field_base_address';
+  $handler->display->display_options['fields']['field_base_address']['element_label_colon'] = FALSE;
+  $handler->display->display_options['fields']['field_base_address']['click_sort_column'] = 'country';
+  $handler->display->display_options['fields']['field_base_address']['settings'] = array(
+    'use_widget_handlers' => 1,
+    'format_handlers' => array(
+      'address' => 'address',
+    ),
+  );
+  /* Field: Field: Address */
+  $handler->display->display_options['fields']['field_base_address_1']['id'] = 'field_base_address_1';
+  $handler->display->display_options['fields']['field_base_address_1']['table'] = 'field_data_field_base_address';
+  $handler->display->display_options['fields']['field_base_address_1']['field'] = 'field_base_address';
+  $handler->display->display_options['fields']['field_base_address_1']['exclude'] = TRUE;
+  $handler->display->display_options['fields']['field_base_address_1']['alter']['alter_text'] = TRUE;
+  $handler->display->display_options['fields']['field_base_address_1']['alter']['text'] = '[field_base_address_1-thoroughfare]+[field_base_address_1-locality]+[field_base_address_1-administrative_area]+[field_base_address_1-postal_code]';
+  $handler->display->display_options['fields']['field_base_address_1']['element_label_colon'] = FALSE;
+  $handler->display->display_options['fields']['field_base_address_1']['click_sort_column'] = 'country';
+  $handler->display->display_options['fields']['field_base_address_1']['settings'] = array(
+    'use_widget_handlers' => 1,
+    'format_handlers' => array(
+      'address' => 'address',
+    ),
+  );
+  /* Field: Content: Phone */
+  $handler->display->display_options['fields']['field_base_phone']['id'] = 'field_base_phone';
+  $handler->display->display_options['fields']['field_base_phone']['table'] = 'field_data_field_base_phone';
+  $handler->display->display_options['fields']['field_base_phone']['field'] = 'field_base_phone';
+  /* Field: Field: Email */
+  $handler->display->display_options['fields']['field_base_email']['id'] = 'field_base_email';
+  $handler->display->display_options['fields']['field_base_email']['table'] = 'field_data_field_base_email';
+  $handler->display->display_options['fields']['field_base_email']['field'] = 'field_base_email';
+  /* Field: Content: Geofield */
+  $handler->display->display_options['fields']['field_base_geofield']['id'] = 'field_base_geofield';
+  $handler->display->display_options['fields']['field_base_geofield']['table'] = 'field_data_field_base_geofield';
+  $handler->display->display_options['fields']['field_base_geofield']['field'] = 'field_base_geofield';
+  $handler->display->display_options['fields']['field_base_geofield']['click_sort_column'] = 'geom';
+  $handler->display->display_options['fields']['field_base_geofield']['type'] = 'geofield_latlon';
+  $handler->display->display_options['fields']['field_base_geofield']['settings'] = array(
+    'data' => 'full',
+    'format' => 'decimal_degrees',
+    'labels' => 1,
+  );
+  $handler->display->display_options['defaults']['sorts'] = FALSE;
+  /* Sort criterion: Content: Title */
+  $handler->display->display_options['sorts']['title']['id'] = 'title';
+  $handler->display->display_options['sorts']['title']['table'] = 'node';
+  $handler->display->display_options['sorts']['title']['field'] = 'title';
+  $handler->display->display_options['defaults']['arguments'] = FALSE;
+  $handler->display->display_options['defaults']['filter_groups'] = FALSE;
+  $handler->display->display_options['filter_groups']['groups'] = array(
+    1 => 'OR',
+    2 => 'AND',
+  );
+  $handler->display->display_options['defaults']['filters'] = FALSE;
+  /* Filter criterion: Content: Nid */
+  $handler->display->display_options['filters']['nid']['id'] = 'nid';
+  $handler->display->display_options['filters']['nid']['table'] = 'node';
+  $handler->display->display_options['filters']['nid']['field'] = 'nid';
+  $handler->display->display_options['filters']['nid']['value']['value'] = '29118';
+  $handler->display->display_options['filters']['nid']['group'] = 1;
+  /* Filter criterion: Content: Nid */
+  $handler->display->display_options['filters']['nid_1']['id'] = 'nid_1';
+  $handler->display->display_options['filters']['nid_1']['table'] = 'node';
+  $handler->display->display_options['filters']['nid_1']['field'] = 'nid';
+  $handler->display->display_options['filters']['nid_1']['value']['value'] = '29121';
+  $handler->display->display_options['filters']['nid_1']['group'] = 1;
+  /* Filter criterion: Content: Nid */
+  $handler->display->display_options['filters']['nid_2']['id'] = 'nid_2';
+  $handler->display->display_options['filters']['nid_2']['table'] = 'node';
+  $handler->display->display_options['filters']['nid_2']['field'] = 'nid';
+  $handler->display->display_options['filters']['nid_2']['value']['value'] = '29122';
+  $handler->display->display_options['filters']['nid_2']['group'] = 1;
+  /* Filter criterion: Content: Nid */
+  $handler->display->display_options['filters']['nid_3']['id'] = 'nid_3';
+  $handler->display->display_options['filters']['nid_3']['table'] = 'node';
+  $handler->display->display_options['filters']['nid_3']['field'] = 'nid';
+  $handler->display->display_options['filters']['nid_3']['value']['value'] = '29123';
+  $handler->display->display_options['filters']['nid_3']['group'] = 1;
+  /* Filter criterion: Content: Nid */
+  $handler->display->display_options['filters']['nid_4']['id'] = 'nid_4';
+  $handler->display->display_options['filters']['nid_4']['table'] = 'node';
+  $handler->display->display_options['filters']['nid_4']['field'] = 'nid';
+  $handler->display->display_options['filters']['nid_4']['value']['value'] = '29124';
+  $handler->display->display_options['filters']['nid_4']['group'] = 1;
+  /* Filter criterion: Content: Nid */
+  $handler->display->display_options['filters']['nid_5']['id'] = 'nid_5';
+  $handler->display->display_options['filters']['nid_5']['table'] = 'node';
+  $handler->display->display_options['filters']['nid_5']['field'] = 'nid';
+  $handler->display->display_options['filters']['nid_5']['value']['value'] = '29125';
+  $handler->display->display_options['filters']['nid_5']['group'] = 1;
+  /* Filter criterion: Content: Nid */
+  $handler->display->display_options['filters']['nid_6']['id'] = 'nid_6';
+  $handler->display->display_options['filters']['nid_6']['table'] = 'node';
+  $handler->display->display_options['filters']['nid_6']['field'] = 'nid';
+  $handler->display->display_options['filters']['nid_6']['value']['value'] = '29126';
+  $handler->display->display_options['filters']['nid_6']['group'] = 1;
+  /* Filter criterion: Content: Nid */
+  $handler->display->display_options['filters']['nid_7']['id'] = 'nid_7';
+  $handler->display->display_options['filters']['nid_7']['table'] = 'node';
+  $handler->display->display_options['filters']['nid_7']['field'] = 'nid';
+  $handler->display->display_options['filters']['nid_7']['value']['value'] = '29127';
+  $handler->display->display_options['filters']['nid_7']['group'] = 1;
+  /* Filter criterion: Content: Nid */
+  $handler->display->display_options['filters']['nid_8']['id'] = 'nid_8';
+  $handler->display->display_options['filters']['nid_8']['table'] = 'node';
+  $handler->display->display_options['filters']['nid_8']['field'] = 'nid';
+  $handler->display->display_options['filters']['nid_8']['value']['value'] = '29128';
+  $handler->display->display_options['filters']['nid_8']['group'] = 1;
+  /* Filter criterion: Content: Nid */
+  $handler->display->display_options['filters']['nid_9']['id'] = 'nid_9';
+  $handler->display->display_options['filters']['nid_9']['table'] = 'node';
+  $handler->display->display_options['filters']['nid_9']['field'] = 'nid';
+  $handler->display->display_options['filters']['nid_9']['value']['value'] = '29129';
+  $handler->display->display_options['filters']['nid_9']['group'] = 1;
+  /* Filter criterion: Content: Nid */
+  $handler->display->display_options['filters']['nid_10']['id'] = 'nid_10';
+  $handler->display->display_options['filters']['nid_10']['table'] = 'node';
+  $handler->display->display_options['filters']['nid_10']['field'] = 'nid';
+  $handler->display->display_options['filters']['nid_10']['value']['value'] = '29130';
+  $handler->display->display_options['filters']['nid_10']['group'] = 1;
+  /* Filter criterion: Content: Nid */
+  $handler->display->display_options['filters']['nid_11']['id'] = 'nid_11';
+  $handler->display->display_options['filters']['nid_11']['table'] = 'node';
+  $handler->display->display_options['filters']['nid_11']['field'] = 'nid';
+  $handler->display->display_options['filters']['nid_11']['value']['value'] = '29131';
+  $handler->display->display_options['filters']['nid_11']['group'] = 1;
+  /* Filter criterion: Content: Nid */
+  $handler->display->display_options['filters']['nid_12']['id'] = 'nid_12';
+  $handler->display->display_options['filters']['nid_12']['table'] = 'node';
+  $handler->display->display_options['filters']['nid_12']['field'] = 'nid';
+  $handler->display->display_options['filters']['nid_12']['value']['value'] = '29132';
+  $handler->display->display_options['filters']['nid_12']['group'] = 1;
+  /* Filter criterion: Content: Nid */
+  $handler->display->display_options['filters']['nid_13']['id'] = 'nid_13';
+  $handler->display->display_options['filters']['nid_13']['table'] = 'node';
+  $handler->display->display_options['filters']['nid_13']['field'] = 'nid';
+  $handler->display->display_options['filters']['nid_13']['value']['value'] = '29133';
+  $handler->display->display_options['filters']['nid_13']['group'] = 1;
+  /* Filter criterion: Content: Nid */
+  $handler->display->display_options['filters']['nid_14']['id'] = 'nid_14';
+  $handler->display->display_options['filters']['nid_14']['table'] = 'node';
+  $handler->display->display_options['filters']['nid_14']['field'] = 'nid';
+  $handler->display->display_options['filters']['nid_14']['value']['value'] = '29134';
+  $handler->display->display_options['filters']['nid_14']['group'] = 1;
+  /* Filter criterion: Content: Type */
+  $handler->display->display_options['filters']['type']['id'] = 'type';
+  $handler->display->display_options['filters']['type']['table'] = 'node';
+  $handler->display->display_options['filters']['type']['field'] = 'type';
+  $handler->display->display_options['filters']['type']['value'] = array(
+    'location' => 'location',
+  );
+  $handler->display->display_options['filters']['type']['group'] = 2;
+  $translatables['clinical_trials_locator'] = array(
+    t('Master'),
+    t('more'),
+    t('Apply'),
+    t('Reset'),
+    t('Sort by'),
+    t('Asc'),
+    t('Desc'),
+    t('Geofield'),
+    t('.'),
+    t(','),
+    t('[field_base_address_1-thoroughfare]+[field_base_address_1-locality]+[field_base_address_1-administrative_area]+[field_base_address_1-postal_code]'),
+    t('All'),
+    t('Block'),
+    t('Block 2'),
+    t('Items per page'),
+    t('- All -'),
+    t('Offset'),
+    t('« first'),
+    t('‹ previous'),
+    t('next ›'),
+    t('last »'),
+    t('Block 3'),
+    t('Name'),
+    t('Address'),
+    t('Phone'),
+    t('Email'),
+  );
+  $export['clinical_trials_locator'] = $view;
   $view = new view();
   $view->name = 'admin_merge_contacts';
   $view->description = '';
@@ -473,7 +891,7 @@ background-image:url(\'https://api.mapbox.com/styles/v1/mapbox/streets-v10/stati
       </div>
     </div>
     <p class="font-size--lg padding-bottom--lg">
-      Please confirm that you are interested in participating and a clinician will contact you. 
+      Please confirm that you are interested in participating and a clinician will contact you.
     </p>
      <p class="text-align--center">
       [ops]
@@ -588,7 +1006,7 @@ background-image:url(\'https://api.mapbox.com/styles/v1/mapbox/streets-v10/stati
       </div>
     </div>
     <p class="font-size--lg padding-bottom--lg">
-      Please confirm that you are interested in participating and a clinician will contact you. 
+      Please confirm that you are interested in participating and a clinician will contact you.
     </p>
      <p class="text-align--center">
       [ops]
