@@ -140,16 +140,16 @@ function kidneys_misc_trial_validate(&$form, &$form_state) {
       // Add machine name of fields that should return TRUE.
       // !CHANGE THIS ARRAY FOR NEW TRIAL
       $fields_true = array(
-        'field_iga_18',
-        'field_igan_biopsy_years',
-        'field_igan_biopsy',
-        'field_igan'
+        'field_artemis',
+        'field_artemis_biopsy',
+        'field_artemis_biopsy_yrs',
+        'field_artemis_18',
       );
 
       // Add machine name of fields that should return FALSE.
       // !CHANGE THIS ARRAY FOR NEW TRIAL
       $fields_false = array(
-        'field_igan_transplant',
+        'field_artemis_transplant',
       );
 
       // Machine name of field that stores user submitted address.
@@ -254,7 +254,7 @@ function kidneys_misc_process_trial_form($form, &$form_state) {
     // If any fields are false, true test doesn't pass.
     foreach ($form['fields_true'] as $true_field) {
       if (isset($wrapper->{$true_field})) {
-        dpm($wrapper->{$false_field}->value(), 'true '. $true_field);
+        dpm($wrapper->{$true_field}->value(), 'true '. $true_field);
         if (empty($wrapper->{$true_field}->value())) {
           $true_passes = FALSE;
         }
@@ -270,9 +270,8 @@ function kidneys_misc_process_trial_form($form, &$form_state) {
     }
     // If any fields are true, false test doesn't pass.
     foreach ($form['fields_false'] as $false_field) {
-      print $false_field . "<br>";
       if (isset($wrapper->{$false_field})) {
-        watchdog($false_field, '<pre>' . print_r($wrapper->{$false_field}->value(),1) . '</pre>');
+        dpm($wrapper->{$false_field}->value(), 'true '. $false_field);
         if (!empty($wrapper->{$false_field}->value())) {
           $false_passes = FALSE;
         }
