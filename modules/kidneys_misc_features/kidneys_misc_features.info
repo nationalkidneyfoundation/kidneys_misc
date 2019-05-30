@@ -134,7 +134,6 @@ features[variable][] = pathauto_taxonomy_term_category_pattern
 features[variable][] = xmlsitemap_settings_node_promotion
 features[views_view][] = admin_merge_contacts
 features[views_view][] = iga_submission
-features[views_view][] = clinical_trials_locator
 features_exclude[dependencies][ctools] = ctools
 features_exclude[dependencies][entity] = entity
 features_exclude[dependencies][kidneys_misc] = kidneys_misc
