@@ -254,6 +254,7 @@ function kidneys_misc_process_trial_form($form, &$form_state) {
     // If any fields are false, true test doesn't pass.
     foreach ($form['fields_true'] as $true_field) {
       if (isset($wrapper->{$true_field})) {
+        dpm($wrapper->{$false_field}->value(), 'true '. $true_field);
         if (empty($wrapper->{$true_field}->value())) {
           $true_passes = FALSE;
         }
@@ -270,6 +271,7 @@ function kidneys_misc_process_trial_form($form, &$form_state) {
     // If any fields are true, false test doesn't pass.
     foreach ($form['fields_false'] as $false_field) {
       if (isset($wrapper->{$false_field})) {
+        dpm($wrapper->{$false_field}->value(), 'false '. $false_field);
         if (!empty($wrapper->{$false_field}->value())) {
           $false_passes = FALSE;
         }
@@ -340,6 +342,8 @@ function kidneys_misc_entityform_insert($entityform) {
     $submission_wrapper = entity_metadata_wrapper('entityform', $submission);
     $submission_wrapper->{$entityform->trial_location_field_name}->set($entityform->nearest_trial_location);
     $submission_wrapper->save();
+  }
+  if ($entityform->trial_redirect_path) {
     drupal_goto($entityform->trial_redirect_path . '/' . $entityform->entityform_id);
   }
 }
