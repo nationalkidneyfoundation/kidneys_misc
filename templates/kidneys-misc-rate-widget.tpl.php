@@ -1,5 +1,5 @@
 
-<div id="rating-<?php print $id; ?>" class="rate-container">
+<div id="rating-<?php print $id; ?>" class="rate-container print--hide">
   <div class="question bg--gray-1 padding-x--xxs display--inline-block">
     <span class=""><?php print $question; ?> </span>
     <a class="js--return-false padding-left--xxs"
