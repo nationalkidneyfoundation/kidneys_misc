@@ -1,3 +1,7 @@
+// Callback for reCAPTCHA.
+function kidneys_misc_recaptcha_callback() {
+  jQuery('.g-recaptcha').addClass('recaptcha-success');
+}
 (function ($, Drupal) {
   Drupal.kidneys_misc = Drupal.kidneys_misc || {};
   Drupal.kidneys_misc.getCategories = function(stringify) {

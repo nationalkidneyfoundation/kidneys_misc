@@ -11,6 +11,25 @@ function kidneys_misc_field_widget_form_alter(&$element, &$form_state, $context)
   }
 }
 /**
+ * Implements hook_field_widget_form_alter().
+ */
+function kidneys_misc_element_info_alter(&$type) {
+  if (!empty($type['captcha'])) {
+    // Manipulate output for reCAPTCHA.
+    $type['captcha']['#pre_render'][] = 'kidneys_misc_recaptcha_pre_render';
+  }
+}
+
+function kidneys_misc_recaptcha_pre_render($element) {
+  if ($element['#captcha_type'] == 'recaptcha/reCAPTCHA') {
+    // Add js callback for reCAPTCHA.
+    $m = $element['captcha_widgets']['recaptcha_widget']['#markup'];
+    $m = str_replace('data-sitekey','data-callback="kidneys_misc_recaptcha_callback" data-sitekey',$m);
+    $element['captcha_widgets']['recaptcha_widget']['#markup'] = $m;
+  }
+  return $element;
+}
+/**
  * Implements hook_form_alter
  */
 function kidneys_misc_form_alter(&$form, &$form_state, $form_id) {
