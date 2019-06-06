@@ -6,7 +6,7 @@
  */
 function kidneys_misc_field_widget_form_alter(&$element, &$form_state, $context) {
   // Hack to add 'required' class to radios.
-  if ($element['#type'] == 'radios' && !empty($element['#required'])) {
+  if (!empty($element['#type']) && $element['#type'] == 'radios' && !empty($element['#required'])) {
     $element['#attributes']['class'][] = 'required';
   }
 }
