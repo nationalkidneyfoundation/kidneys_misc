@@ -1,5 +1,34 @@
 <?php
 
+
+/**
+ * Implements hook_field_widget_form_alter().
+ */
+function kidneys_misc_field_widget_form_alter(&$element, &$form_state, $context) {
+  // Hack to add 'required' class to radios.
+  if (!empty($element['#type']) && $element['#type'] == 'radios' && !empty($element['#required'])) {
+    $element['#attributes']['class'][] = 'required';
+  }
+}
+/**
+ * Implements hook_field_widget_form_alter().
+ */
+function kidneys_misc_element_info_alter(&$type) {
+  if (!empty($type['captcha'])) {
+    // Manipulate output for reCAPTCHA.
+    $type['captcha']['#pre_render'][] = 'kidneys_misc_recaptcha_pre_render';
+  }
+}
+
+function kidneys_misc_recaptcha_pre_render($element) {
+  if ($element['#captcha_type'] == 'recaptcha/reCAPTCHA') {
+    // Add js callback for reCAPTCHA.
+    $m = $element['captcha_widgets']['recaptcha_widget']['#markup'];
+    $m = str_replace('data-sitekey','data-callback="kidneys_misc_recaptcha_callback" data-sitekey',$m);
+    $element['captcha_widgets']['recaptcha_widget']['#markup'] = $m;
+  }
+  return $element;
+}
 /**
  * Implements hook_filter_info().
  */
@@ -52,7 +81,13 @@ function _filter_kidneys_misc_tips($filter, $format, $long = FALSE) {
  * Implements hook_form_alter
  */
 function kidneys_misc_form_alter(&$form, &$form_state, $form_id) {
-  if ($form_id == 'iga_entityform_edit_form') {
+  // Add custom validation for entityforms.
+  if (isset($form["#entity_type"]) && $form["#entity_type"] == 'entityform' && !(path_is_admin(current_path()))) {
+    $form['#validate'][] = 'kidneys_misc_trial_validate';
+  }
+
+  if ($form_id == 'iga_entityform_edit_form' || $form_id == 'iga_artemis_entityform_edit_form') {
+    //dpm($form);
     $form['actions']['#prefix'] = '<div class="">';
     $form['actions']['#suffix'] = '</div>';
 
@@ -108,49 +143,284 @@ function kidneys_misc_form_alter(&$form, &$form_state, $form_id) {
   }
 }
 
-/*
- * Implements hook_entityform_insert
+/**
+ * Entity form validation handler
+ * @param $form
+ * @param $form_state
  */
-function kidneys_misc_entityform_insert($entityform) {
-  if ($entityform->type == 'iga') {
+function kidneys_misc_trial_validate(&$form, &$form_state) {
 
-    // Get values from submission.
-    $age = $entityform->field_iga_18[LANGUAGE_NONE][0]['value'];
-    $cancer = $entityform->field_iga_cancer[LANGUAGE_NONE][0]['value'];
-    $transplant = $entityform->field_iga_transplant[LANGUAGE_NONE][0]['value'];
-    $diagnosis = $entityform->field_iga_diagnosis[LANGUAGE_NONE][0]['value'];
-    $end_stage = $entityform->field_iga_end_stage[LANGUAGE_NONE][0]['value'];
-    $biopsy = $entityform->field_iga_biopsy[LANGUAGE_NONE][0]['value'];
+  // Setup fields for use below.
+  $fields_to_keep = $fields_true = $fields_false = array();
+  $address_field = $trial_redirect_path = $trial_location_field_name = '';
+  $is_trial = FALSE;
+  switch ($form['#bundle']) {
+    // Machine name of the entityform.
+    case 'iga':
 
-    $city = $entityform->field_base_address[LANGUAGE_NONE][0]['locality'];
-    $state = $entityform->field_base_address[LANGUAGE_NONE][0]['administrative_area'];
-    $zip = $entityform->field_base_address[LANGUAGE_NONE][0]['postal_code'];
-    $address = $city . ' ' . $state . ' ' . $zip;
+      // Add trial flag.
+      $is_trial = TRUE;
 
-    if ($age && $diagnosis && $biopsy && !$cancer && !$transplant && !$end_stage) {
-      // Find a lat and lon
-      $point = geocoder('google', $address);
-      if (!empty($point)) {
-        $lon = $point->coords[0];
-        $lat = $point->coords[1];
-        $arg = $lat . ',' . $lon;
-        // Use view to look up location, this makes it easy to adjust in UI.
-        $result = views_get_view_result('clinical_trials_locator', 'default', $arg);
-        if (!empty($result)) {
-          // If we have a location, save it to the submission for future reference.
-          // Maybe we should be doing this in presave as opposed to insert?
-          $location = $result[0]->nid;
-          $submission = entity_load_single('entityform', $entityform->entityform_id);
-          $submission_wrapper = entity_metadata_wrapper('entityform', $submission);
-          $submission_wrapper->field_iga_closest_center->set($location);
-          $submission_wrapper->save();
+      // Adds machine name of fields whose data should be stored.
+      // All other fields data will be cleared after form processing.
+      $fields_to_keep = array(
+        'field_base_first_name',
+        'field_base_last_name',
+        'field_base_email',
+        'field_iga_closest_center',
+      );
+
+      // Add machine name of fields that should return TRUE.
+      $fields_true = array(
+        'field_iga_18',
+        'field_iga_diagnosis',
+        'field_iga_biopsy',
+      );
+
+      // Add machine name of fields that should return FALSE.
+      $fields_false = array(
+        'field_iga_cancer',
+        'field_iga_transplant',
+        'field_iga_end_stage',
+      );
+
+      // Machine name of field that stores user submitted address.
+      $address_field = 'field_base_address';
+
+      // Destination to be redirected to after form processing.
+      // The webform submission id will be appended to the URL when redirecting.
+      // Ex: iga-trial/results will redirect to iga-trial/results/430 where 430 is the submission id.
+      $trial_redirect_path = 'iga-trial/results';
+
+      // Machine name of field that should store the closest center found after form processing.
+      $trial_location_field_name = 'field_iga_closest_center';
+      break;
+// Duplicate, uncomment, and update values indicated (!CHANGE) below to add a new trial.
+//    // Machine name of the entityform.
+//    // !CHANGE CASE FOR NEW TRIAL
+    case 'iga_artemis':
+//
+//      // Add trial flag.
+      $is_trial = TRUE;
+//
+//      //  Adds machine name of fields whose data should be stored.
+//      // All other fields data will be cleared after form processing.
+//      // !CHANGE THIS ARRAY FOR NEW TRIAL
+      $fields_to_keep = array(
+        'field_base_first_name',
+        'field_base_last_name',
+        'field_base_email',
+        'field_base_address',
+        'field_base_phone'
+      );
+
+      // Add machine name of fields that should return TRUE.
+      // !CHANGE THIS ARRAY FOR NEW TRIAL
+      $fields_true = array(
+        'field_artemis',
+        'field_artemis_biopsy',
+        'field_artemis_biopsy_yrs',
+        'field_artemis_18',
+      );
+
+      // Add machine name of fields that should return FALSE.
+      // !CHANGE THIS ARRAY FOR NEW TRIAL
+      $fields_false = array(
+        'field_artemis_transplant',
+      );
+
+      // Machine name of field that stores user submitted address.
+      // !CHANGE THIS STRING FOR NEW TRIAL
+      $address_field = 'field_base_address';
+
+      // Destination to be redirected to after form processing.
+      // The webform submission id will be appended to the URL when redirecting.
+      // Ex: iga-trial/results will redirect to iga-trial/results/430 where 430 is the submission id.
+      // !CHANGE THIS STRING FOR NEW TRIAL
+      //
+      $trial_redirect_path = 'iga-trial/results';
+
+      // Machine name of field that should store the closest center found after form processing.
+      // !CHANGE THIS STRING FOR NEW TRIAL
+      $trial_location_field_name = 'field_iga_closest_center';
+      break;
+// Duplicate, uncomment, and update values indicated (!CHANGE) below to add a new trial.
+//    // Machine name of the entityform.
+//    // !CHANGE CASE FOR NEW TRIAL
+//    case 'new_trial':
+//
+//      // Add trial flag.
+//      $is_trial = TRUE;
+//
+//      //  Adds machine name of fields whose data should be stored.
+//      // All other fields data will be cleared after form processing.
+//      // !CHANGE THIS ARRAY FOR NEW TRIAL
+//      $fields_to_keep = array(
+//        'field_base_first_name',
+//        'field_base_last_name',
+//        'field_base_email',
+//      );
+//
+//      // Add machine name of fields that should return TRUE.
+//      // !CHANGE THIS ARRAY FOR NEW TRIAL
+//      $fields_true = array(
+//        'field_new_trial_18',
+//      );
+//
+//      // Add machine name of fields that should return FALSE.
+//      // !CHANGE THIS ARRAY FOR NEW TRIAL
+//      $fields_false = array(
+//        'field_new_trial_cancer',
+//      );
+//
+//      // Machine name of field that stores user submitted address.
+//      // !CHANGE THIS STRING FOR NEW TRIAL
+//      $address_field = 'field_base_address';
+//
+//      // Destination to be redirected to after form processing.
+//      // The webform submission id will be appended to the URL when redirecting.
+//      // Ex: iga-trial/results will redirect to iga-trial/results/430 where 430 is the submission id.
+//      // !CHANGE THIS STRING FOR NEW TRIAL
+//      $trial_redirect_path = 'new_trial-trial/results';
+//
+//      // Machine name of field that should store the closest center found after form processing.
+//      // !CHANGE THIS STRING FOR NEW TRIAL
+//      $trial_location_field_name = 'field_new_trial_closest_center';
+//      break;
+  }
+
+  // Perform special processing if this is a trial submission.
+  if ($is_trial) {
+    // Pass values to the form.
+    $form['fields_to_keep'] = $fields_to_keep;
+    $form['fields_true'] = $fields_true;
+    $form['fields_false'] = $fields_false;
+    $form['address_field'] = $address_field;
+    $form['trial_redirect_path'] = $trial_redirect_path;
+    $form['trial_location_field_name'] = $trial_location_field_name;
+
+    // Process trial form data:
+    kidneys_misc_process_trial_form($form, $form_state);
+  }
+
+}
+
+/**
+ * Process submitted trial form data.
+ *   - Process true and false values.
+ *   - Process address and get closest trial location.
+ *   - Clear out unwanted field data.
+ *
+ * @param $form
+ * @param $form_state
+ */
+function kidneys_misc_process_trial_form($form, &$form_state) {
+  $access = FALSE;
+  $location = $address_string = '';
+
+  if (isset($form_state['entityform'])) {
+    $wrapper = entity_metadata_wrapper('entityform',$form_state['entityform']);
+
+    // Check for TRUE values.
+    if (empty($form['fields_true'])) {
+      $true_passes = FALSE;
+    }
+    else {
+      $true_passes = TRUE;
+    }
+    // If any fields are false, true test doesn't pass.
+    foreach ($form['fields_true'] as $true_field) {
+      if (isset($wrapper->{$true_field})) {
+        if (empty($wrapper->{$true_field}->value())) {
+          $true_passes = FALSE;
         }
       }
     }
 
-    drupal_goto('iga-trial/results/' . $entityform->entityform_id);
+    // Check for FALSE values.
+    if (empty($form['fields_false'])) {
+      $false_passes = FALSE;
+    }
+    else {
+      $false_passes = TRUE;
+    }
+    // If any fields are true, false test doesn't pass.
+    foreach ($form['fields_false'] as $false_field) {
+      if (isset($wrapper->{$false_field})) {
+        if (!empty($wrapper->{$false_field}->value())) {
+          $false_passes = FALSE;
+        }
+      }
+    }
+
+    // If TRUE and FALSE values are as expected set access to TRUE.
+    if ($true_passes && $false_passes) {
+      $access = TRUE;
+    }
+
+    // Process address.
+    if (isset($wrapper->{$form['address_field']})) {
+      if (!empty($address = $wrapper->{$form['address_field']}->value())) {
+        $address_string = $address['locality'];
+        $address_string .= ', ' . $address['administrative_area'];
+        $address_string .= ', ' . $address['postal_code'];
+      }
+    }
+
+    // If access is allowed and there is an address
+    if ($access && $address_string) {
+      // Get the entityform_type id for views filtering.
+      $bundle = $wrapper->getBundle();
+      $query = "SELECT id FROM {entityform_type} WHERE type = :type";
+      $entity_form_type_id = db_query($query, array(':type' => $bundle))->fetchField();
+
+      // Geocode the address string.
+      $point = geocoder('google', $address_string);
+      if (!empty($point)) {
+        $lon = $point->coords[0];
+        $lat = $point->coords[1];
+        $geo_coordinates = $lat . ',' . $lon;
+        // Use view to look up location by proximity to the given address.
+        // Results will be limited to locations that reference this specific trial.
+        $result = views_get_view_result('clinical_trials_locator', 'default', $geo_coordinates, $entity_form_type_id);
+        if (!empty($result)) {
+          $location = $result[0]->nid;
+        }
+      }
+    }
+
+    // Iterate over all field values and clear the ones we don't want.
+    foreach($form_state['values'] as $field => $submitted_value) {
+      if (strpos($field, 'field') !== FALSE) {
+        if (!in_array($field, $form['fields_to_keep'])) {
+          $form_state['values'][$field] = array();
+          $form_state["entityform"]->{$field} = array();
+        }
+      }
+    }
+    // Pass values to the entityform object.
+    $form_state["entityform"]->allow_access = $access;
+    $form_state["entityform"]->nearest_trial_location = $location;
+    $form_state["entityform"]->trial_location_field_name = $form['trial_location_field_name'];
+    $form_state["entityform"]->trial_redirect_path = $form['trial_redirect_path'];
   }
 
+  return;
+}
+
+/*
+ * Implements hook_entityform_insert().
+ */
+function kidneys_misc_entityform_insert($entityform) {
+  if ($entityform->entityform_id && $entityform->allow_access && !empty($entityform->nearest_trial_location)) {
+    $submission = entity_load_single('entityform', $entityform->entityform_id);
+    $submission_wrapper = entity_metadata_wrapper('entityform', $submission);
+    $submission_wrapper->{$entityform->trial_location_field_name}->set($entityform->nearest_trial_location);
+    $submission_wrapper->save();
+  }
+  if ($entityform->trial_redirect_path) {
+    drupal_goto($entityform->trial_redirect_path . '/' . $entityform->entityform_id);
+  }
 }
 
 function kidneys_misc_views_pre_render ( &$view ) {
@@ -1445,3 +1715,48 @@ function kidney_misc_get_nkfcontact_iframe($params) {
   //$iframe = '<iframe style="" src="'.$url.'"></iframe>';
   return $iframe;
 }
+
+/*
+ * Implementation of hook_theme.
+ */
+function kidneys_misc_theme($existing, $type, $theme, $path){
+  return array(
+    'kidney_misc_google_rate_widget' => array(
+      'template' => 'kidneys-misc-rate-widget',
+      'path' => drupal_get_path('module', 'kidneys_misc') . '/templates',
+      'type' => 'theme',
+      'variables' => array(
+        'id' => NULL,
+        'category' => NULL,
+        'yes_label' => t('Yes'),
+        'no_label' => t('No'),
+        'value' => NULL,
+        'action' => 'rate',
+        'question' => t('Is this content useful?'),
+        'thanks' => t('Thank you for your feedback.')
+      )
+    )
+  );
+}
+
+/**
+ * Returns html for content rating via google analtyics.
+ * Currently requires nkf_base theme.
+ *
+ * @param string
+ *
+ * @return string
+ *  html for rating widget
+ */
+ function nkf_misc_get_rate_widget($category, $value = NULL, $action = NULL, $yes = NULL, $no = NULL, $question = NULL, $thanks = NULL) {
+   $array = array(
+     'category' => $category,
+     'value' => $value,
+     'action' => $action,
+     'yes_label' => ($yes) ? $yes : t('Yes'),
+     'no_label' => ($no) ? $no : t('No'),
+     'question' => ($question) ? $question : t('Is this content useful?'),
+     'thanks' => ($thanks) ? $thanks : t('Thank you for your feedback.')
+   );
+   return theme('kidney_misc_google_rate_widget', $array);
+ }

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * kidneys_misc_features.strongarm.inc
@@ -136,6 +137,41 @@ function kidneys_misc_features_strongarm() {
   $strongarm->name = 'node_submitted_promotion';
   $strongarm->value = 0;
   $export['node_submitted_promotion'] = $strongarm;
+
+  $strongarm = new stdClass();
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'pathauto_node_promotion_en_pattern';
+  $strongarm->value = '';
+  $export['pathauto_node_promotion_en_pattern'] = $strongarm;
+
+  $strongarm = new stdClass();
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'pathauto_node_promotion_es_pattern';
+  $strongarm->value = '';
+  $export['pathauto_node_promotion_es_pattern'] = $strongarm;
+
+  $strongarm = new stdClass();
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'pathauto_node_promotion_pattern';
+  $strongarm->value = '';
+  $export['pathauto_node_promotion_pattern'] = $strongarm;
+
+  $strongarm = new stdClass();
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'pathauto_node_promotion_und_pattern';
+  $strongarm->value = '';
+  $export['pathauto_node_promotion_und_pattern'] = $strongarm;
+
+  $strongarm = new stdClass();
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'pathauto_taxonomy_term_category_pattern';
+  $strongarm->value = '';
+  $export['pathauto_taxonomy_term_category_pattern'] = $strongarm;
 
   $strongarm = new stdClass();
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
