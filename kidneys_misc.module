@@ -1044,7 +1044,7 @@ function kidneys_misc_contact_send_to_fa($values) {
     'tfa_2293' => 'Clinical Tools and CE Alerts'
   );
 
-  $vq = $values['queue'];
+  $vq = trim($values['queue']);
   $q = array_filter($queue, function($el) use ($vq) {
     return ( strpos(strtolower($el), strtolower($vq)) !== false );
   });
