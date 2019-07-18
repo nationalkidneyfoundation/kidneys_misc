@@ -991,11 +991,11 @@ function kidneys_misc_nkfcontact_form_submit(&$form, &$form_state) {
 function kidneys_misc_contact_send_to_fa($values) {
 
   // TODO: make the URL, ID and Control editable in UI.
-  $fa_url = 'https://www.tfaforms.com/responses/processor';
+  $fa_url = 'https://kidneyforms.tfaforms.net/responses/processor';
 
   $form_id = '4727556';
 
-  $form_control = '90bf6b18ac1aff1632f6dc4c7b77f82f';
+  $form_control = '012697dcfbe7305f1dee2d653129df84';
 
   $queue = array(
     "tfa_2245" => 'Corporate Relations',
