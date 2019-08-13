@@ -212,6 +212,8 @@ function kidneys_misc_check_for_existing_pending_orders($recurring_entity) {
       return false;
     }
   }
+  watchdog('kidney_misc_recurring_pass', 'Recurring entity has no pending orders for recurring entity: ' . $recurring_entity->id);
+  
   return true;
 }
 
@@ -245,6 +247,8 @@ function kidneys_misc_check_for_recently_charged_recurring_orders($recurring_ent
       return false;
     }
   }
+    watchdog('kidney_misc_recurring_pass', 'Recurring entity has no recently charged orders for recurring entity: ' . $recurring_entity->id);
+
   return true;
 }
 
